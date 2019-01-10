@@ -1,0 +1,11 @@
+{
+    "name": "hsldymq/whisper",
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Archman\\Whisper\\": "./src"
+        }
+    }
+}
