@@ -3,6 +3,9 @@
         <testsuite name="helpers">
             <file>./tests/HelperTest.php</file>
         </testsuite>
+        <testsuite name="communicator">
+            <file>./tests/CommunicatorTest.php</file>
+        </testsuite>
     </testsuites>
 
 </phpunit>
