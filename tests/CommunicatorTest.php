@@ -16,5 +16,9 @@ class CommunicatorTest extends TestCase
         $msg = new Message(0, '');
         $expect = Communicator::MAGIC_WORD."\x00\x00\x00\x00\x00";
         $this->assertEquals($expect, Communicator::serialize($msg));
+
+        $msg = new Message(257, 'abc');
+        $expect = Communicator::MAGIC_WORD."\x01\x03\x00\x00\x00abc";
+        $this->assertEquals($expect, Communicator::serialize($msg));
     }
 }
