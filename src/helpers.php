@@ -49,17 +49,23 @@ if (!function_exists(__NAMESPACE__.'\\strip')) {
     function strip(int $data, int $stripToSize, int $toByteOrder = BO_HOST): int
     {
         $result = $data;
+        $format = PHP_INT_SIZE === 8 ? 'P' : 'V';
 
         if ($stripToSize <= 0) {
             return 0;
         } else if ($stripToSize < PHP_INT_SIZE) {
-            $result = $data % pow(256, $stripToSize);
+            $packed = pack($format, $result);
+            if (isLittleEndian()) {
+                $packed = str_pad(substr($packed, 0, $stripToSize), PHP_INT_SIZE, "\x00");
+            } else {
+                $packed = str_pad(substr($packed, -$stripToSize), PHP_INT_SIZE, "\x00", STR_PAD_LEFT);
+            }
+            $result = unpack("{$format}result", $packed)['result'];
         }
 
         if ($toByteOrder === BO_LE && getByteOrder() === BO_BE ||
             $toByteOrder === BO_BE && getByteOrder() === BO_LE
         ) {
-            $format = PHP_INT_SIZE === 4 ? 'L' : 'Q';
             // 翻转内存的值
             $unpacked = unpack("{$format}result", strrev(pack($format, $result)));
             $result = $unpacked['result'];
