@@ -6,13 +6,13 @@ class Message
 {
     private $status;
 
-    private $message;
+    private $content;
 
-    public function __construct(int $status, string $message)
+    public function __construct(int $status, string $content)
     {
         $this->status = $status;
 
-        $this->message = $message;
+        $this->content = $content;
     }
 
     public function getStatus(): int
@@ -20,13 +20,13 @@ class Message
         return $this->status;
     }
 
-    public function getMessage(): string
+    public function getContent(): string
     {
-        return $this->message;
+        return $this->content;
     }
 
-    public function getMessageLength(): int
+    public function getContentLength(): int
     {
-        return strlen($this->message);
+        return strlen($this->content);
     }
 }
