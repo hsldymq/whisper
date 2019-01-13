@@ -161,6 +161,14 @@ class HelperTest extends TestCase
         Whisper\resetByteOrder();
     }
 
+    /**
+     * @afterClass
+     */
+    public static function reset()
+    {
+        Whisper\resetByteOrder();
+    }
+
     private function makeInt(string $byteArray, int $intSize): int
     {
         if ($intSize === 4) {
