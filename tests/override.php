@@ -15,7 +15,7 @@ function getOrderByte(): int
     return $orderByte;
 }
 
-function setOrderByte(int $o)
+function setByteOrder(int $o)
 {
     global $orderByte;
 
