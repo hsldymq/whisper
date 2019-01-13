@@ -22,13 +22,14 @@ class Communicator
     public static function serialize(Message $msg): string
     {
         $status = strip($msg->getStatus(), self::STATUS_FIELD_SIZE, BO_LE);
-        $length = strip($msg->getMessageLength(), self::LENGTH_FIELD_SIZE, BO_LE);
+        $length = strip($msg->getContentLength(), self::LENGTH_FIELD_SIZE, BO_LE);
 
         return sprintf(
             "%s%s%s%s",
             self::MAGIC_WORD,
             pack('C', $status),
-            pack('V', $length)
+            pack('V', $length),
+            $msg->getContent()
         );
     }
 }
