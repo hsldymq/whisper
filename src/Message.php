@@ -8,25 +8,11 @@ class Message
 
     private $message;
 
-    private $identifier;
-
-    public function __construct(int $status, string $message, string $identifier = null)
+    public function __construct(int $status, string $message)
     {
         $this->status = $status;
 
         $this->message = $message;
-
-        $this->identifier = $this->setIdentifier($identifier ?? uuid());
-    }
-
-    public function setIdentifier(string $id): string
-    {
-        $this->identifier = $id;
-    }
-
-    public function getIdentifier(): string
-    {
-        return $this->identifier;
     }
 
     public function getStatus(): int
