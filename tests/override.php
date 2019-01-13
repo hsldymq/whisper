@@ -8,7 +8,7 @@ namespace Archman\Whisper;
 
 $orderByte = null;
 
-function getOrderByte(): int
+function getByteOrder(): int
 {
     global $orderByte;
 
@@ -22,7 +22,7 @@ function setByteOrder(int $o)
     $orderByte = $o;
 }
 
-function resetOrderByte()
+function resetByteOrder()
 {
     global $orderByte;
 
