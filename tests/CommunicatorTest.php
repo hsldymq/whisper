@@ -21,4 +21,32 @@ class CommunicatorTest extends TestCase
         $expect = Communicator::MAGIC_WORD."\x01\x03\x00\x00\x00abc";
         $this->assertEquals($expect, Communicator::serialize($msg));
     }
+
+    /**
+     * @depends testSerialize
+     */
+    public function testParseHeader()
+    {
+        $msg = new Message(1, 'xxxx');
+        $s = Communicator::serialize($msg);
+        $header = Communicator::parseHeader($s);
+        $this->assertEquals(['status' => 1, 'length' => 4], $header);
+
+        $msg = new Message(257, '');
+        $s = Communicator::serialize($msg);
+        $header = Communicator::parseHeader($s);
+        $this->assertEquals(['status' => 1, 'length' => 0], $header);
+    }
+
+    /**
+     * @depends testParseHeader
+     * @expectedException \Archman\Whisper\Exception\CheckMagicWordException
+     */
+    public function testParseInvalidHeader()
+    {
+        $msg = new Message(1, 'xxxx');
+        $s = Communicator::serialize($msg);
+        $s[0] = 'x';
+        Communicator::parseHeader($s);
+    }
 }
