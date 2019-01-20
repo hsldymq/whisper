@@ -2,6 +2,8 @@
 
 namespace Archman\Whisper;
 
+use Archman\ByteOrder\ByteOrder;
+use Archman\ByteOrder\Operator;
 use Archman\Whisper\Exception\CheckMagicWordException;
 use Archman\Whisper\Exception\InvalidSocketException;
 
@@ -69,6 +71,39 @@ class Communicator
         }
     }
 
+    public function onReceive()
+    {
+        $received = stream_socket_recvfrom($this->socketFD, 65535);
+        if (strlen($received) === 0 && $this->isSocketClosed()) {
+            throw new InvalidSocketException();
+        }
+
+        $this->receiveBuffer .= $received;
+        try {
+            while ($message = $this->parseMessages()) {
+                if (is_callable($this->onMessageHandler)) {
+                    $this->onMessageHandler($message);
+                }
+            }
+        } catch (\Throwable $e) {
+            if (is_callable($this->onErrorHandler)) {
+                $this->onErrorHandler($e);
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    public function onSend()
+    {
+
+    }
+
+    public function getStatus(): int
+    {
+        return $this->status;
+    }
+
     /**
      *
      *
@@ -78,14 +113,14 @@ class Communicator
      */
     public static function serialize(Message $msg): string
     {
-        $status = strip($msg->getStatus(), self::STATUS_FIELD_SIZE, BO_LE);
-        $length = strip($msg->getContentLength(), self::LENGTH_FIELD_SIZE, BO_LE);
+        $status = Operator::toByteArray($msg->getStatus(), ByteOrder::LITTLE_ENDIAN);
+        $length = Operator::toByteArray($msg->getContentLength(), ByteOrder::LITTLE_ENDIAN);
 
         return sprintf(
             "%s%s%s%s",
             self::MAGIC_WORD,
-            pack('C', $status),
-            pack('V', $length),
+            substr($status, 0, self::STATUS_FIELD_SIZE),
+            substr($length, 0, self::LENGTH_FIELD_SIZE),
             $msg->getContent()
         );
     }
@@ -106,6 +141,41 @@ class Communicator
             'status' => $status,
             'length' => $length,
         ];
+    }
+
+    /**
+     * @return Message|null
+     * @throws
+     */
+    private function parseMessages()
+    {
+        if ($this->status === self::STATUS_READING_HEADER) {
+            if (strlen($this->receiveBuffer) < self::HEADER_SIZE) {
+                return null;
+            }
+
+            $header = self::parseHeader(substr($this->receiveBuffer, 0, self::HEADER_SIZE));
+            $this->header['status'] = $header['status'];
+            $this->header['length'] = $header['length'];
+            $this->status = self::STATUS_READING_CONTENT;
+        }
+
+        if ($this->status === self::STATUS_READING_CONTENT) {
+            if (strlen($this->receiveBuffer) - self::HEADER_SIZE < $this->header['length']) {
+                return null;
+            }
+
+            $content = substr($this->receiveBuffer, 13, $this->header['length']);
+            $message = new Message($this->header['status'], $content);
+            $this->receiveBuffer = substr($this->receiveBuffer, $this->header['length'] + 13);
+            $this->header['status'] = null;
+            $this->header['length'] = null;
+            $this->status = self::STATUS_READING_HEADER;
+
+            return $message;
+        }
+
+        return null;
     }
 
     private function isSocketClosed(): bool
