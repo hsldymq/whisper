@@ -16,16 +16,20 @@ class Communicator
     const MAGIC_WORD = "\0\0arch\0\0";
 
     // 头部状态字段长度(字节)
-    const STATUS_FIELD_SIZE = 1;
+    const HEADER_STATUS_SIZE = 1;
 
     // 头部消息体长度字段长度(字节)
-    const LENGTH_FIELD_SIZE = 4;
+    const HEADER_LENGTH_SIZE = 4;
 
     // 处于读取消息头部阶段的状态
     const STATUS_READING_HEADER = 0x01;
 
     // 处于读取消息体阶段的状态
     const STATUS_READING_CONTENT = 0x02;
+
+    protected $receiveBuffer = '';
+
+    protected $sendBuffer = '';
 
     /** @var resource 与子/主进程通信的socket文件描述符 */
     private $socketFD;
@@ -44,10 +48,6 @@ class Communicator
 
     /** @var callable */
     private $onErrorHandler;
-
-    private $receiveBuffer = '';
-
-    private $sendBuffer = '';
 
     public function __construct($socket)
     {
@@ -119,8 +119,8 @@ class Communicator
         return sprintf(
             "%s%s%s%s",
             self::MAGIC_WORD,
-            substr($status, 0, self::STATUS_FIELD_SIZE),
-            substr($length, 0, self::LENGTH_FIELD_SIZE),
+            substr($status, 0, self::HEADER_STATUS_SIZE),
+            substr($length, 0, self::HEADER_LENGTH_SIZE),
             $msg->getContent()
         );
     }
@@ -133,8 +133,8 @@ class Communicator
             throw new CheckMagicWordException();
         }
 
-        $status = ord(substr($header, $magicWordLength, self::STATUS_FIELD_SIZE));
-        $length = substr($header, $magicWordLength + self::STATUS_FIELD_SIZE, self::LENGTH_FIELD_SIZE);
+        $status = ord(substr($header, $magicWordLength, self::HEADER_STATUS_SIZE));
+        $length = substr($header, $magicWordLength + self::HEADER_STATUS_SIZE, self::HEADER_LENGTH_SIZE);
         $length = unpack("Llength", $length)['length'];
 
         return [
@@ -147,7 +147,7 @@ class Communicator
      * @return Message|null
      * @throws
      */
-    private function parseMessages()
+    protected function parseMessages()
     {
         if ($this->status === self::STATUS_READING_HEADER) {
             if (strlen($this->receiveBuffer) < self::HEADER_SIZE) {
