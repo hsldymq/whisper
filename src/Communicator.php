@@ -10,7 +10,7 @@ use Archman\Whisper\Exception\InvalidSocketException;
 class Communicator
 {
     // 消息头总长度
-    const HEADER_SIZE = 13;
+    const HEADER_SIZE = 12;
 
     // 头部magic word,用于标志一个正确的消息开始
     const MAGIC_WORD = "\0\0arch\0\0";
@@ -19,7 +19,8 @@ class Communicator
     const HEADER_TYPE_SIZE = 1;
 
     // 头部消息体长度字段长度(字节)
-    const HEADER_LENGTH_SIZE = 4;
+    // 一个消息体最多容纳16M载荷
+    const HEADER_LENGTH_SIZE = 3;
 
     // 处于读取消息头部阶段的状态
     const STATUS_READING_HEADER = 0x01;
@@ -37,11 +38,8 @@ class Communicator
     /** @var int 当前状态会持续的在读取消息头部与读取消息体之间变化 */
     private $status = self::STATUS_READING_HEADER;
 
-    /** @var array 当前消息解析出的字段 */
-    private $header = [
-        'type' => null,
-        'length' => null,
-    ];
+    /** @var array|null 当前消息解析出的头部 */
+    private $header = null;
 
     /** @var callable */
     private $onMessageHandler;
@@ -135,7 +133,7 @@ class Communicator
 
         $type = ord(substr($header, $magicWordLength, self::HEADER_TYPE_SIZE));
         $length = substr($header, $magicWordLength + self::HEADER_TYPE_SIZE, self::HEADER_LENGTH_SIZE);
-        $length = unpack("Llength", $length)['length'];
+        $length = unpack("Llength", str_pad($length, 4, "\0"))['length'];
 
         return [
             'type' => $type,
@@ -155,8 +153,7 @@ class Communicator
             }
 
             $header = self::parseHeader(substr($this->receiveBuffer, 0, self::HEADER_SIZE));
-            $this->header['type'] = $header['type'];
-            $this->header['length'] = $header['length'];
+            $this->header = $header;
             $this->status = self::STATUS_READING_CONTENT;
         }
 
@@ -165,11 +162,10 @@ class Communicator
                 return null;
             }
 
-            $content = substr($this->receiveBuffer, 13, $this->header['length']);
+            $content = substr($this->receiveBuffer, self::HEADER_SIZE, $this->header['length']);
             $message = new Message($this->header['type'], $content);
-            $this->receiveBuffer = substr($this->receiveBuffer, $this->header['length'] + 13);
-            $this->header['type'] = null;
-            $this->header['length'] = null;
+            $this->receiveBuffer = substr($this->receiveBuffer, self::HEADER_SIZE + $this->header['length']);
+            $this->header = null;
             $this->status = self::STATUS_READING_HEADER;
 
             return $message;
