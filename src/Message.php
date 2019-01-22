@@ -10,8 +10,15 @@ class Message
 
     public function __construct(int $type, string $content)
     {
-        $this->type = $type;
+        if ($type > 255) {
+            // TODO throw exception
+        }
 
+        if (strlen($content) > 0xFFFFFF) {
+            // TODO throw exception
+        }
+
+        $this->type = $type;
         $this->content = $content;
     }
 
