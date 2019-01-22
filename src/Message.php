@@ -4,20 +4,20 @@ namespace Archman\Whisper;
 
 class Message
 {
-    private $status;
+    private $type;
 
     private $content;
 
-    public function __construct(int $status, string $content)
+    public function __construct(int $type, string $content)
     {
-        $this->status = $status;
+        $this->type = $type;
 
         $this->content = $content;
     }
 
-    public function getStatus(): int
+    public function getType(): int
     {
-        return $this->status;
+        return $this->type;
     }
 
     public function getContent(): string

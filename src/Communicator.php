@@ -15,8 +15,8 @@ class Communicator
     // 头部magic word,用于标志一个正确的消息开始
     const MAGIC_WORD = "\0\0arch\0\0";
 
-    // 头部状态字段长度(字节)
-    const HEADER_STATUS_SIZE = 1;
+    // 头部消息类型字段长度(字节)
+    const HEADER_TYPE_SIZE = 1;
 
     // 头部消息体长度字段长度(字节)
     const HEADER_LENGTH_SIZE = 4;
@@ -39,7 +39,7 @@ class Communicator
 
     /** @var array 当前消息解析出的字段 */
     private $header = [
-        'status' => null,
+        'type' => null,
         'length' => null,
     ];
 
@@ -113,13 +113,13 @@ class Communicator
      */
     public static function serialize(Message $msg): string
     {
-        $status = Operator::toByteArray($msg->getStatus(), ByteOrder::LITTLE_ENDIAN);
+        $type = Operator::toByteArray($msg->getType(), ByteOrder::LITTLE_ENDIAN);
         $length = Operator::toByteArray($msg->getContentLength(), ByteOrder::LITTLE_ENDIAN);
 
         return sprintf(
             "%s%s%s%s",
             self::MAGIC_WORD,
-            substr($status, 0, self::HEADER_STATUS_SIZE),
+            substr($type, 0, self::HEADER_TYPE_SIZE),
             substr($length, 0, self::HEADER_LENGTH_SIZE),
             $msg->getContent()
         );
@@ -133,12 +133,12 @@ class Communicator
             throw new CheckMagicWordException();
         }
 
-        $status = ord(substr($header, $magicWordLength, self::HEADER_STATUS_SIZE));
-        $length = substr($header, $magicWordLength + self::HEADER_STATUS_SIZE, self::HEADER_LENGTH_SIZE);
+        $type = ord(substr($header, $magicWordLength, self::HEADER_TYPE_SIZE));
+        $length = substr($header, $magicWordLength + self::HEADER_TYPE_SIZE, self::HEADER_LENGTH_SIZE);
         $length = unpack("Llength", $length)['length'];
 
         return [
-            'status' => $status,
+            'type' => $type,
             'length' => $length,
         ];
     }
@@ -155,7 +155,7 @@ class Communicator
             }
 
             $header = self::parseHeader(substr($this->receiveBuffer, 0, self::HEADER_SIZE));
-            $this->header['status'] = $header['status'];
+            $this->header['type'] = $header['type'];
             $this->header['length'] = $header['length'];
             $this->status = self::STATUS_READING_CONTENT;
         }
@@ -166,9 +166,9 @@ class Communicator
             }
 
             $content = substr($this->receiveBuffer, 13, $this->header['length']);
-            $message = new Message($this->header['status'], $content);
+            $message = new Message($this->header['type'], $content);
             $this->receiveBuffer = substr($this->receiveBuffer, $this->header['length'] + 13);
-            $this->header['status'] = null;
+            $this->header['type'] = null;
             $this->header['length'] = null;
             $this->status = self::STATUS_READING_HEADER;
 
