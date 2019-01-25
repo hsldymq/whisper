@@ -28,6 +28,14 @@ class Communicator
     // 处于读取消息体阶段的状态
     const STATUS_READING_CONTENT = 0x02;
 
+    const STATUS_SOCKET_READY = 0x10;
+
+    const STATUS_SOCKET_READONLY = 0x11;
+
+    const STATUS_SOCKET_WRITEONLY = 0x12;
+
+    const STATUS_SOCKET_CLOSED = 0x13;
+
     protected $receiveBuffer = '';
 
     protected $sendBuffer = '';
@@ -36,7 +44,9 @@ class Communicator
     private $socketFD;
 
     /** @var int 当前状态会持续的在读取消息头部与读取消息体之间变化 */
-    private $status = self::STATUS_READING_HEADER;
+    private $readStatus = self::STATUS_READING_HEADER;
+
+    private $status = self::STATUS_SOCKET_READY;
 
     /** @var array|null 当前消息解析出的头部 */
     private $header = null;
@@ -51,7 +61,7 @@ class Communicator
     {
         $this->socketFD = $socket;
 
-        if ($this->isSocketClosed()) {
+        if ($this->getStatus() === self::STATUS_SOCKET_CLOSED) {
             throw new InvalidSocketException();
         }
     }
@@ -97,9 +107,25 @@ class Communicator
 
     }
 
+    public function getReadStatus(): int
+    {
+        return $this->readStatus;
+    }
+
     public function getStatus(): int
     {
+        if (in_array($this->status, [self::STATUS_SOCKET_READY, self::STATUS_SOCKET_READONLY, self::STATUS_SOCKET_WRITEONLY])) {
+            if ($this->isSocketClosed()) {
+                $this->status = self::STATUS_SOCKET_CLOSED;
+            }
+        }
+
         return $this->status;
+    }
+
+    public function getSocket()
+    {
+        return $this->socketFD;
     }
 
     /**
@@ -147,17 +173,17 @@ class Communicator
      */
     protected function parseMessages()
     {
-        if ($this->status === self::STATUS_READING_HEADER) {
+        if ($this->readStatus === self::STATUS_READING_HEADER) {
             if (strlen($this->receiveBuffer) < self::HEADER_SIZE) {
                 return null;
             }
 
             $header = self::parseHeader(substr($this->receiveBuffer, 0, self::HEADER_SIZE));
             $this->header = $header;
-            $this->status = self::STATUS_READING_CONTENT;
+            $this->readStatus = self::STATUS_READING_CONTENT;
         }
 
-        if ($this->status === self::STATUS_READING_CONTENT) {
+        if ($this->readStatus === self::STATUS_READING_CONTENT) {
             if (strlen($this->receiveBuffer) - self::HEADER_SIZE < $this->header['length']) {
                 return null;
             }
@@ -166,7 +192,7 @@ class Communicator
             $message = new Message($this->header['type'], $content);
             $this->receiveBuffer = substr($this->receiveBuffer, self::HEADER_SIZE + $this->header['length']);
             $this->header = null;
-            $this->status = self::STATUS_READING_HEADER;
+            $this->readStatus = self::STATUS_READING_HEADER;
 
             return $message;
         }

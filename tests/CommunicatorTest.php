@@ -67,7 +67,7 @@ class CommunicatorTest extends TestCase
             return $this->parseMessages();
         })->bindTo($communicator, $communicator);
 
-        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getStatus());
+        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getReadStatus());
 
         $msg = Communicator::serialize(new Message(1, 'abc'));
         $cat($msg);
@@ -75,25 +75,25 @@ class CommunicatorTest extends TestCase
         $message = $parser();
         $this->assertInstanceOf(Message::class, $message);
         $this->assertEquals("abc", $message->getContent());
-        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getStatus());
+        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getReadStatus());
 
         $msg = Communicator::serialize(new Message(1, 'xyz'));
         // 只写入一部分头部
         $cat(substr($msg, 0, Communicator::HEADER_SIZE - 2));
         $this->assertNull($parser());
-        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getStatus());
+        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getReadStatus());
 
         // 将头部剩下部分连带一个字节的内容部分写入
         $cat(substr($msg, Communicator::HEADER_SIZE - 2, 3));
         $this->assertNull($parser());
-        $this->assertEquals(Communicator::STATUS_READING_CONTENT, $communicator->getStatus());
+        $this->assertEquals(Communicator::STATUS_READING_CONTENT, $communicator->getReadStatus());
 
         // 将剩余内容写入
         $cat(substr($msg, Communicator::HEADER_SIZE + 1));
         $message = $parser();
         $this->assertInstanceOf(Message::class, $message);
         $this->assertEquals('xyz', $message->getContent());
-        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getStatus());
+        $this->assertEquals(Communicator::STATUS_READING_HEADER, $communicator->getReadStatus());
 
     }
 }
