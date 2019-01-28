@@ -2,6 +2,8 @@
 
 namespace Archman\Whisper;
 
+use React\EventLoop\Factory;
+
 abstract class Master
 {
     /**
@@ -17,15 +19,44 @@ abstract class Master
      */
     protected $workers = [];
 
+    private $event;
+
+    private $errorHandler;
+
+    /**
+     * 需要确保父类的构造方法会被调用.
+     */
+    public function __construct()
+    {
+        $this->event = Factory::create();
+    }
+
+    public function registerErrorHandler(callable $handler)
+    {
+        $this->errorHandler = $handler;
+    }
+
     abstract public function run();
+
+    protected function sendMessage(string $workerID, Message $msg)
+    {
+        if (!isset($this->workers[$workerID])) {
+            // TODO throw exception
+            throw new \Exception();
+        }
+        /** @var Communicator $communicator */
+        $communicator = $this->workers['isWritable']['communicator'];
+        if (!$communicator->isWritable()) {
+            // TODO throw exception
+            throw new \Exception();
+        }
+        $communicator->enqueueMessage($msg);
+    }
 
     protected function fork(WorkerFactoryInterface $factory): string
     {
-        $socketPair = stream_socket_pair(
-            STREAM_PF_UNIX,
-            STREAM_SOCK_STREAM,
-            STREAM_IPPROTO_IP
-        );
+        $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+
         if ($socketPair === false) {
             // TODO throw exception
         }
