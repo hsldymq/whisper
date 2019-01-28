@@ -62,13 +62,13 @@ class Communicator
         $this->socketFD = $socket;
 
         if ($this->getStatus() === self::STATUS_SOCKET_CLOSED) {
-            throw new InvalidSocketException();
+            throw new InvalidSocketException('Invalid socket');
         }
     }
 
     public function __destruct()
     {
-        if (!$this->isSocketClosed()) {
+        if (!$this->isClosed()) {
             fclose($this->socketFD);
         }
         if ($this->onMessageHandler) {
@@ -79,11 +79,26 @@ class Communicator
         }
     }
 
+    public function enqueueMessage(Message $msg)
+    {
+        $this->sendBuffer .= self::serialize($msg);
+    }
+
     public function onReceive()
     {
         $received = stream_socket_recvfrom($this->socketFD, 65535);
-        if (strlen($received) === 0 && $this->isSocketClosed()) {
-            throw new InvalidSocketException();
+        if (strlen($received) === 0 && $this->isClosed()) {
+            $e = new InvalidSocketException('Connection closed');
+        } else if (!$this->isReadable()) {
+            $e = new InvalidSocketException('Read closed');
+        }
+
+        if (isset($e)) {
+            if (is_callable($this->onErrorHandler)) {
+                $this->onErrorHandler($e);
+            } else {
+                throw $e;
+            }
         }
 
         $this->receiveBuffer .= $received;
@@ -107,15 +122,25 @@ class Communicator
 
     }
 
-    public function getReadStatus(): int
+    public function isReadable(): bool
     {
-        return $this->readStatus;
+        return in_array($this->getStatus(), [self::STATUS_SOCKET_READY, self::STATUS_SOCKET_READONLY]);
+    }
+
+    public function isWritable(): bool
+    {
+        return in_array($this->getStatus(), [self::STATUS_SOCKET_READY, self::STATUS_SOCKET_WRITEONLY]);
+    }
+
+    public function isClosed(): bool
+    {
+        return !is_resource($this->socketFD) || feof($this->socketFD);
     }
 
     public function getStatus(): int
     {
         if (in_array($this->status, [self::STATUS_SOCKET_READY, self::STATUS_SOCKET_READONLY, self::STATUS_SOCKET_WRITEONLY])) {
-            if ($this->isSocketClosed()) {
+            if ($this->isClosed()) {
                 $this->status = self::STATUS_SOCKET_CLOSED;
             }
         }
@@ -123,9 +148,9 @@ class Communicator
         return $this->status;
     }
 
-    public function getSocket()
+    public function getReadStatus(): int
     {
-        return $this->socketFD;
+        return $this->readStatus;
     }
 
     /**
@@ -198,10 +223,5 @@ class Communicator
         }
 
         return null;
-    }
-
-    private function isSocketClosed(): bool
-    {
-        return !is_resource($this->socketFD) || feof($this->socketFD);
     }
 }
