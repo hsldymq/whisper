@@ -36,6 +36,12 @@ class Communicator
 
     const STATUS_SOCKET_CLOSED = 0x13;
 
+    /** @var callable */
+    public $messageHandler;
+
+    /** @var callable */
+    public $errorHandler;
+
     protected $receiveBuffer = '';
 
     protected $sendBuffer = '';
@@ -51,12 +57,6 @@ class Communicator
     /** @var array|null 当前消息解析出的头部 */
     private $header = null;
 
-    /** @var callable */
-    private $onMessageHandler;
-
-    /** @var callable */
-    private $onErrorHandler;
-
     public function __construct($socket)
     {
         $this->socketFD = $socket;
@@ -71,11 +71,11 @@ class Communicator
         if (!$this->isClosed()) {
             fclose($this->socketFD);
         }
-        if ($this->onMessageHandler) {
-            unset($this->onErrorHandler);
+        if ($this->messageHandler) {
+            unset($this->errorHandler);
         }
-        if ($this->onErrorHandler) {
-            unset($this->onMessageHandler);
+        if ($this->errorHandler) {
+            unset($this->messageHandler);
         }
     }
 
@@ -94,7 +94,7 @@ class Communicator
         }
 
         if (isset($e)) {
-            if (is_callable($this->onErrorHandler)) {
+            if (is_callable($this->errorHandler)) {
                 $this->onErrorHandler($e);
             } else {
                 throw $e;
@@ -104,12 +104,12 @@ class Communicator
         $this->receiveBuffer .= $received;
         try {
             while ($message = $this->parseMessages()) {
-                if (is_callable($this->onMessageHandler)) {
+                if (is_callable($this->messageHandler)) {
                     $this->onMessageHandler($message);
                 }
             }
         } catch (\Throwable $e) {
-            if (is_callable($this->onErrorHandler)) {
+            if (is_callable($this->errorHandler)) {
                 $this->onErrorHandler($e);
             } else {
                 throw $e;
