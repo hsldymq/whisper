@@ -23,12 +23,28 @@ abstract class Master
 
     private $errorHandler;
 
+    private $messageHandler;
+
+    private $onMessage;
+
+    abstract public function run();
+
     /**
      * 需要确保父类的构造方法会被调用.
      */
     public function __construct()
     {
         $this->event = Factory::create();
+        $this->onMessage = function (Message $msg) {
+            if (is_callable($this->messageHandler)) {
+                return $this->messageHandler($msg);
+            }
+        };
+    }
+
+    public function registerMessageHandler(callable $handler)
+    {
+        $this->messageHandler = $handler;
     }
 
     public function registerErrorHandler(callable $handler)
@@ -36,9 +52,7 @@ abstract class Master
         $this->errorHandler = $handler;
     }
 
-    abstract public function run();
-
-    protected function sendMessage(string $workerID, Message $msg)
+    final protected function sendMessage(string $workerID, Message $msg)
     {
         if (!isset($this->workers[$workerID])) {
             // TODO throw exception
@@ -46,14 +60,14 @@ abstract class Master
         }
         /** @var Communicator $communicator */
         $communicator = $this->workers['isWritable']['communicator'];
-        if (!$communicator->isWritable()) {
+        if ($communicator->isClosed() || !$communicator->isWritable()) {
             // TODO throw exception
             throw new \Exception();
         }
         $communicator->enqueueMessage($msg);
     }
 
-    protected function fork(WorkerFactoryInterface $factory): string
+    final protected function fork(WorkerFactoryInterface $factory): string
     {
         $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
@@ -68,6 +82,8 @@ abstract class Master
             unset($socketPair[1]);
 
             $communicator = new Communicator($socketPair[0]);
+            $communicator->messageHandler = $this->onMessage;
+
             $workerID = spl_object_hash($communicator);
             $this->workers[$workerID] = [
                 'pid' => $pid,
@@ -76,7 +92,14 @@ abstract class Master
             ];
         } else if ($pid === 0) {
             fclose($socketPair[0]);
-            unset($socketPair[0]);
+            unset(
+                $socketPair[0],
+                $this->workers,
+                $this->event,
+                $this->onMessage,
+                $this->messageHandler,
+                $this->errorHandler
+            );
 
             try {
                 $communicator = new Communicator($socketPair[1]);
