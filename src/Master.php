@@ -36,9 +36,12 @@ abstract class Master
     {
         $this->event = Factory::create();
         $this->onMessage = function (Message $msg) {
+            $result = null;
             if (is_callable($this->messageHandler)) {
-                return $this->messageHandler($msg);
+                $result = $this->messageHandler($msg);
             }
+
+            return $result;
         };
     }
 
