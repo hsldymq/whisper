@@ -6,18 +6,14 @@ use React\EventLoop\Factory;
 
 abstract class Worker
 {
+    /** @var Communicator */
     private $communicator;
 
     private $event;
 
     abstract public function run(): int;
 
-    /**
-     * 需要确保父类的构造方法会被调用.
-     *
-     * @param Communicator
-     */
-    public function __construct(Communicator $c)
+    public function init(Communicator $c): self
     {
         $this->event = Factory::create();
         $this->communicator = $c;

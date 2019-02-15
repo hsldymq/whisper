@@ -29,10 +29,7 @@ abstract class Master
 
     abstract public function run();
 
-    /**
-     * 需要确保父类的构造方法会被调用.
-     */
-    public function __construct()
+    final public function init(array $customArgs = [])
     {
         $this->event = Factory::create();
         $this->onMessage = function (Message $msg) {
@@ -43,6 +40,8 @@ abstract class Master
 
             return $result;
         };
+
+        $this->customInit($customArgs);
     }
 
     public function registerMessageHandler(callable $handler)
@@ -53,6 +52,15 @@ abstract class Master
     public function registerErrorHandler(callable $handler)
     {
         $this->errorHandler = $handler;
+    }
+
+    /**
+     * override this
+     *
+     * @param array $args
+     */
+    protected function customInit(array $args)
+    {
     }
 
     final protected function sendMessage(string $workerID, Message $msg)
@@ -79,8 +87,8 @@ abstract class Master
         }
 
         $pid = pcntl_fork();
-
         if ($pid > 0) {
+            // child
             fclose($socketPair[1]);
             unset($socketPair[1]);
 
@@ -94,6 +102,7 @@ abstract class Master
                 'info' => [],
             ];
         } else if ($pid === 0) {
+            // parent
             fclose($socketPair[0]);
             unset(
                 $socketPair[0],
@@ -106,7 +115,7 @@ abstract class Master
 
             try {
                 $communicator = new Communicator($socketPair[1]);
-                $result = $factory->makeWorker($communicator)->run();
+                $result = $factory->makeWorker()->init($communicator)->run();
             } catch (\Throwable $e) {
                 $result = -1;
             }
