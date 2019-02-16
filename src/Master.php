@@ -3,6 +3,8 @@
 namespace Archman\Whisper;
 
 use React\EventLoop\Factory;
+use React\EventLoop\LoopInterface;
+use React\Stream\DuplexResourceStream;
 
 abstract class Master
 {
@@ -19,7 +21,8 @@ abstract class Master
      */
     protected $workers = [];
 
-    private $event;
+    /** @var LoopInterface */
+    private $loop;
 
     private $errorHandler;
 
@@ -31,7 +34,7 @@ abstract class Master
 
     final public function init(array $customArgs = [])
     {
-        $this->event = Factory::create();
+        $this->loop = Factory::create();
         $this->onMessage = function (Message $msg) {
             $result = null;
             if (is_callable($this->messageHandler)) {
@@ -69,13 +72,15 @@ abstract class Master
             // TODO throw exception
             throw new \Exception();
         }
+
         /** @var Communicator $communicator */
-        $communicator = $this->workers['isWritable']['communicator'];
-        if ($communicator->isClosed() || !$communicator->isWritable()) {
+        $communicator = $this->workers[$workerID]['communicator'];
+        if (!$communicator->isWritable()) {
             // TODO throw exception
             throw new \Exception();
         }
-        $communicator->enqueueMessage($msg);
+
+        $communicator->send($msg);
     }
 
     final protected function fork(WorkerFactoryInterface $factory): string
@@ -92,7 +97,8 @@ abstract class Master
             fclose($socketPair[1]);
             unset($socketPair[1]);
 
-            $communicator = new Communicator($socketPair[0]);
+            $stream = new DuplexResourceStream($socketPair[0], $this->loop);
+            $communicator = new Communicator($stream);
             $communicator->messageHandler = $this->onMessage;
 
             $workerID = spl_object_hash($communicator);
@@ -107,14 +113,15 @@ abstract class Master
             unset(
                 $socketPair[0],
                 $this->workers,
-                $this->event,
+                $this->loop,
                 $this->onMessage,
                 $this->messageHandler,
                 $this->errorHandler
             );
 
             try {
-                $communicator = new Communicator($socketPair[1]);
+                $stream = new DuplexResourceStream($socketPair[1], $this->loop);
+                $communicator = new Communicator($stream);
                 $result = $factory->makeWorker()->init($communicator)->run();
             } catch (\Throwable $e) {
                 $result = -1;

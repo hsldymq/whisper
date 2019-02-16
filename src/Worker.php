@@ -21,12 +21,12 @@ abstract class Worker
 
     final protected function sendMessage(Message $msg)
     {
-        if ($this->communicator->isClosed() || !$this->communicator->isWritable()) {
+        if (!$this->communicator->isWritable()) {
             // TODO throw exception
             throw new \Exception();
         }
 
-        $this->communicator->enqueueMessage($msg);
+        $this->communicator->send($msg);
     }
 
 }
