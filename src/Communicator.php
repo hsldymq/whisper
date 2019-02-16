@@ -5,7 +5,7 @@ namespace Archman\Whisper;
 use Archman\ByteOrder\ByteOrder;
 use Archman\ByteOrder\Operator;
 use Archman\Whisper\Exception\CheckMagicWordException;
-use Archman\Whisper\Exception\InvalidSocketException;
+use React\Stream\DuplexResourceStream;
 
 class Communicator
 {
@@ -28,49 +28,32 @@ class Communicator
     // 处于读取消息体阶段的状态
     const STATUS_READING_CONTENT = 0x02;
 
-    const STATUS_SOCKET_READY = 0x10;
-
-    const STATUS_SOCKET_READONLY = 0x11;
-
-    const STATUS_SOCKET_WRITEONLY = 0x12;
-
-    const STATUS_SOCKET_CLOSED = 0x13;
-
     /** @var callable */
     public $messageHandler;
 
     /** @var callable */
     public $errorHandler;
 
-    protected $receiveBuffer = '';
+    protected $receivedData = '';
 
-    protected $sendBuffer = '';
-
-    /** @var resource 与子/主进程通信的socket文件描述符 */
-    private $socketFD;
+    /** @var DuplexResourceStream */
+    private $stream;
 
     /** @var int 当前状态会持续的在读取消息头部与读取消息体之间变化 */
     private $readStatus = self::STATUS_READING_HEADER;
 
-    private $status = self::STATUS_SOCKET_READY;
-
     /** @var array|null 当前消息解析出的头部 */
     private $header = null;
 
-    public function __construct($socket)
+    public function __construct(DuplexResourceStream $stream)
     {
-        $this->socketFD = $socket;
-
-        if ($this->getStatus() === self::STATUS_SOCKET_CLOSED) {
-            throw new InvalidSocketException('Invalid socket');
-        }
+        $stream->on("data", [$this, "onReceive"]);
+        $this->stream = $stream;
     }
 
     public function __destruct()
     {
-        if (!$this->isClosed()) {
-            fclose($this->socketFD);
-        }
+        unset($this->stream);
         if ($this->messageHandler) {
             unset($this->errorHandler);
         }
@@ -79,29 +62,14 @@ class Communicator
         }
     }
 
-    public function enqueueMessage(Message $msg)
+    public function send(Message $msg)
     {
-        $this->sendBuffer .= self::serialize($msg);
+        $this->stream->write(self::serialize($msg));
     }
 
-    public function onReceive()
+    public function onReceive(string $data)
     {
-        $received = stream_socket_recvfrom($this->socketFD, 65535);
-        if (strlen($received) === 0 && $this->isClosed()) {
-            $e = new InvalidSocketException('Connection closed');
-        } else if (!$this->isReadable()) {
-            $e = new InvalidSocketException('Read closed');
-        }
-
-        if (isset($e)) {
-            if (is_callable($this->errorHandler)) {
-                $this->onErrorHandler($e);
-            } else {
-                throw $e;
-            }
-        }
-
-        $this->receiveBuffer .= $received;
+        $this->receivedData .= $data;
         try {
             while ($message = $this->parseMessages()) {
                 if (is_callable($this->messageHandler)) {
@@ -117,35 +85,14 @@ class Communicator
         }
     }
 
-    public function onSend()
-    {
-
-    }
-
     public function isReadable(): bool
     {
-        return in_array($this->getStatus(), [self::STATUS_SOCKET_READY, self::STATUS_SOCKET_READONLY]);
+        return $this->stream->isReadable();
     }
 
     public function isWritable(): bool
     {
-        return in_array($this->getStatus(), [self::STATUS_SOCKET_READY, self::STATUS_SOCKET_WRITEONLY]);
-    }
-
-    public function isClosed(): bool
-    {
-        return !is_resource($this->socketFD) || feof($this->socketFD);
-    }
-
-    public function getStatus(): int
-    {
-        if (in_array($this->status, [self::STATUS_SOCKET_READY, self::STATUS_SOCKET_READONLY, self::STATUS_SOCKET_WRITEONLY])) {
-            if ($this->isClosed()) {
-                $this->status = self::STATUS_SOCKET_CLOSED;
-            }
-        }
-
-        return $this->status;
+        return $this->stream->isWritable();
     }
 
     public function getReadStatus(): int
@@ -199,23 +146,23 @@ class Communicator
     protected function parseMessages()
     {
         if ($this->readStatus === self::STATUS_READING_HEADER) {
-            if (strlen($this->receiveBuffer) < self::HEADER_SIZE) {
+            if (strlen($this->receivedData) < self::HEADER_SIZE) {
                 return null;
             }
 
-            $header = self::parseHeader(substr($this->receiveBuffer, 0, self::HEADER_SIZE));
+            $header = self::parseHeader(substr($this->receivedData, 0, self::HEADER_SIZE));
             $this->header = $header;
             $this->readStatus = self::STATUS_READING_CONTENT;
         }
 
         if ($this->readStatus === self::STATUS_READING_CONTENT) {
-            if (strlen($this->receiveBuffer) - self::HEADER_SIZE < $this->header['length']) {
+            if (strlen($this->receivedData) - self::HEADER_SIZE < $this->header['length']) {
                 return null;
             }
 
-            $content = substr($this->receiveBuffer, self::HEADER_SIZE, $this->header['length']);
+            $content = substr($this->receivedData, self::HEADER_SIZE, $this->header['length']);
             $message = new Message($this->header['type'], $content);
-            $this->receiveBuffer = substr($this->receiveBuffer, self::HEADER_SIZE + $this->header['length']);
+            $this->receivedData = substr($this->receivedData, self::HEADER_SIZE + $this->header['length']);
             $this->header = null;
             $this->readStatus = self::STATUS_READING_HEADER;
 
