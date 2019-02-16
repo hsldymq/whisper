@@ -60,7 +60,7 @@ class CommunicatorTest extends TestCase
         };
 
         $cat = (function ($data) {
-            $this->receiveBuffer .= $data;
+            $this->receivedData .= $data;
         })->bindTo($communicator, $communicator);
 
         $parser = (function () {
