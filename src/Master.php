@@ -24,6 +24,18 @@ abstract class Master implements HandlerInterface
     /** @var LoopInterface */
     protected $loop;
 
+    /**
+     * @example
+     *  public function run()
+     *  {
+     *      while (true) {
+     *          // do something
+     *          // etc. $this->sendMessage(new Message(0, "content"));
+     *          $this->process(2);      // block for 2 seconds.
+     *      }
+     *  }
+     *
+     */
     abstract public function run();
 
     final public function __construct()
@@ -33,6 +45,27 @@ abstract class Master implements HandlerInterface
         $this->init();
     }
 
+    /**
+     * 开始阻塞处理消息传输和处理,直至指定时间返回.
+     *
+     * @param float $interval 阻塞时间,秒.
+     * @example $master->run(0.1);  // 阻塞100毫秒后返回.
+     * @example $master->run(2);    // 阻塞2秒后返回.
+     */
+    public function process(float $interval)
+    {
+        $this->loop->addTimer($interval, function () {
+            $this->loop->stop();
+        });
+        $this->loop->run();
+    }
+
+    /**
+     * 将消息写入缓冲区.
+     * @param string $workerID
+     * @param Message $msg
+     * @return bool
+     */
     final protected function sendMessage(string $workerID, Message $msg): bool
     {
         if (!isset($this->workers[$workerID])) {
@@ -49,6 +82,8 @@ abstract class Master implements HandlerInterface
             return false;
         }
 
+        $this->onSendingMessage($msg);
+
         return $communicator->send($msg);
     }
 
@@ -56,7 +91,7 @@ abstract class Master implements HandlerInterface
      * @param WorkerFactoryInterface $factory
      * @return string|null
      */
-    final protected function fork(WorkerFactoryInterface $factory)
+    final protected function newWorker(WorkerFactoryInterface $factory)
     {
         $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
@@ -68,7 +103,6 @@ abstract class Master implements HandlerInterface
 
         $pid = pcntl_fork();
         if ($pid > 0) {
-            echo "forked child: {$pid}\n";
             // parent
             fclose($socketPair[1]);
             unset($socketPair[1]);
@@ -82,6 +116,11 @@ abstract class Master implements HandlerInterface
                 'communicator' => $communicator,
                 'info' => [],
             ];
+            $stream->on("close", function () use ($workerID) {
+                $this->onWorkerExit($workerID);
+                unset($this->workers[$workerID]);
+                echo $workerID . " Closed\n";
+            });
         } else if ($pid === 0) {
             // child
             fclose($socketPair[0]);
@@ -92,8 +131,8 @@ abstract class Master implements HandlerInterface
             );
 
             $worker = $factory->makeWorker($socketPair[1]);
-            $result = $worker->run();
-            exit($result);
+            $worker->run();
+            exit();
         } else {
             // TODO throw exception
             $this->handleError(new \Exception());
@@ -107,4 +146,8 @@ abstract class Master implements HandlerInterface
      * 继承这个方法做一些额外的初始化操作
      */
     protected function init() {}
+
+    protected function onWorkerExit(string $workerID) {}
+
+    protected function onSendingMessage(Message $msg) {}
 }
