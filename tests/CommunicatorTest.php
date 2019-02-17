@@ -57,6 +57,7 @@ class CommunicatorTest extends TestCase
     {
         $communicator = new class() extends Communicator {
             public function __construct() {}
+            public function __destruct() {}
         };
 
         $cat = (function ($data) {
