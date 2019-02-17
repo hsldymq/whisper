@@ -6,7 +6,7 @@ use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
 
-abstract class Master
+abstract class Master implements HandlerInterface
 {
     /**
      * @var array 数据结构
@@ -22,84 +22,59 @@ abstract class Master
     protected $workers = [];
 
     /** @var LoopInterface */
-    private $loop;
-
-    private $errorHandler;
-
-    private $messageHandler;
-
-    private $onMessage;
+    protected $loop;
 
     abstract public function run();
 
-    final public function init(array $customArgs = [])
+    final public function __construct()
     {
         $this->loop = Factory::create();
-        $this->onMessage = function (Message $msg) {
-            $result = null;
-            if (is_callable($this->messageHandler)) {
-                $result = $this->messageHandler($msg);
-            }
 
-            return $result;
-        };
-
-        $this->customInit($customArgs);
+        $this->init();
     }
 
-    public function registerMessageHandler(callable $handler)
-    {
-        $this->messageHandler = $handler;
-    }
-
-    public function registerErrorHandler(callable $handler)
-    {
-        $this->errorHandler = $handler;
-    }
-
-    /**
-     * override this
-     *
-     * @param array $args
-     */
-    protected function customInit(array $args)
-    {
-    }
-
-    final protected function sendMessage(string $workerID, Message $msg)
+    final protected function sendMessage(string $workerID, Message $msg): bool
     {
         if (!isset($this->workers[$workerID])) {
             // TODO throw exception
-            throw new \Exception();
+            $this->handleError(new \Exception());
+            return false;
         }
 
         /** @var Communicator $communicator */
         $communicator = $this->workers[$workerID]['communicator'];
         if (!$communicator->isWritable()) {
             // TODO throw exception
-            throw new \Exception();
+            $this->handleError(new \Exception());
+            return false;
         }
 
-        $communicator->send($msg);
+        return $communicator->send($msg);
     }
 
-    final protected function fork(WorkerFactoryInterface $factory): string
+    /**
+     * @param WorkerFactoryInterface $factory
+     * @return string|null
+     */
+    final protected function fork(WorkerFactoryInterface $factory)
     {
         $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
         if ($socketPair === false) {
             // TODO throw exception
+            $this->handleError(new \Exception());
+            return null;
         }
 
         $pid = pcntl_fork();
         if ($pid > 0) {
-            // child
+            echo "forked child: {$pid}\n";
+            // parent
             fclose($socketPair[1]);
             unset($socketPair[1]);
 
             $stream = new DuplexResourceStream($socketPair[0], $this->loop);
-            $communicator = new Communicator($stream);
-            $communicator->messageHandler = $this->onMessage;
+            $communicator = new Communicator($stream, $this);
 
             $workerID = spl_object_hash($communicator);
             $this->workers[$workerID] = [
@@ -108,29 +83,28 @@ abstract class Master
                 'info' => [],
             ];
         } else if ($pid === 0) {
-            // parent
+            // child
             fclose($socketPair[0]);
             unset(
                 $socketPair[0],
                 $this->workers,
-                $this->loop,
-                $this->onMessage,
-                $this->messageHandler,
-                $this->errorHandler
+                $this->loop
             );
 
-            try {
-                $stream = new DuplexResourceStream($socketPair[1], $this->loop);
-                $communicator = new Communicator($stream);
-                $result = $factory->makeWorker()->init($communicator)->run();
-            } catch (\Throwable $e) {
-                $result = -1;
-            }
+            $worker = $factory->makeWorker($socketPair[1]);
+            $result = $worker->run();
             exit($result);
         } else {
             // TODO throw exception
+            $this->handleError(new \Exception());
+            return null;
         }
 
         return $workerID;
     }
+
+    /**
+     * 继承这个方法做一些额外的初始化操作
+     */
+    protected function init() {}
 }

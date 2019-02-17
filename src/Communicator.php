@@ -28,13 +28,10 @@ class Communicator
     // 处于读取消息体阶段的状态
     const STATUS_READING_CONTENT = 0x02;
 
-    /** @var callable */
-    public $messageHandler;
-
-    /** @var callable */
-    public $errorHandler;
-
     protected $receivedData = '';
+
+    /** @var HandlerInterface */
+    private $handler;
 
     /** @var DuplexResourceStream */
     private $stream;
@@ -45,43 +42,41 @@ class Communicator
     /** @var array|null 当前消息解析出的头部 */
     private $header = null;
 
-    public function __construct(DuplexResourceStream $stream)
+    /**
+     * Communicator constructor.
+     * @param DuplexResourceStream $stream
+     * @param HandlerInterface $handler
+     */
+    public function __construct(DuplexResourceStream $stream, HandlerInterface $handler)
     {
         $stream->on("data", [$this, "onReceive"]);
         $this->stream = $stream;
+        $this->handler = $handler;
     }
 
     public function __destruct()
     {
+        $this->stream->end();
+        $this->stream->close();
         unset($this->stream);
-        if ($this->messageHandler) {
-            unset($this->errorHandler);
-        }
-        if ($this->errorHandler) {
-            unset($this->messageHandler);
-        }
+        unset($this->handler);
     }
 
-    public function send(Message $msg)
+    public function send(Message $msg): bool
     {
-        $this->stream->write(self::serialize($msg));
+        return $this->stream->write(self::serialize($msg));
     }
 
     public function onReceive(string $data)
     {
         $this->receivedData .= $data;
+
         try {
             while ($message = $this->parseMessages()) {
-                if (is_callable($this->messageHandler)) {
-                    $this->onMessageHandler($message);
-                }
+                $this->handler->handleMessage($message);
             }
         } catch (\Throwable $e) {
-            if (is_callable($this->errorHandler)) {
-                $this->onErrorHandler($e);
-            } else {
-                throw $e;
-            }
+            $this->handler->handleError($e);
         }
     }
 

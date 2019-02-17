@@ -34,7 +34,6 @@ abstract class Worker implements HandlerInterface
 
     function __destruct()
     {
-        $this->communicator->close();
         unset($this->communicator);
         unset($this->loop);
     }
