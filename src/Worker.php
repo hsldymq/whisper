@@ -15,8 +15,6 @@ abstract class Worker implements HandlerInterface
     /** @var LoopInterface */
     protected $loop;
 
-    abstract public function run(): int;
-
     final function __construct($socketFD)
     {
         if (!is_resource($socketFD)) {
@@ -36,6 +34,11 @@ abstract class Worker implements HandlerInterface
     {
         unset($this->communicator);
         unset($this->loop);
+    }
+
+    public function run()
+    {
+        $this->loop->run();
     }
 
     final protected function sendMessage(Message $msg)
