@@ -4,5 +4,5 @@ namespace Archman\Whisper;
 
 interface WorkerFactoryInterface
 {
-    public function makeWorker(): Worker;
+    public function makeWorker($socketFD): Worker;
 }
