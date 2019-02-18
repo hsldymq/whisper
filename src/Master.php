@@ -91,7 +91,7 @@ abstract class Master implements HandlerInterface
      * @param WorkerFactoryInterface $factory
      * @return string|null
      */
-    final protected function newWorker(WorkerFactoryInterface $factory)
+    final protected function createWorker(WorkerFactoryInterface $factory)
     {
         $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
