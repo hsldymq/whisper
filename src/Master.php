@@ -20,7 +20,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
      *      ...
      *  ]
      */
-    protected $workers = [];
+    private $workers = [];
 
     /** @var LoopInterface */
     protected $loop;
@@ -59,6 +59,15 @@ abstract class Master extends EventEmitter implements HandlerInterface
             $this->loop->stop();
         });
         $this->loop->run();
+    }
+
+    /**
+     * @param string $workerID
+     * @return array|null
+     */
+    public function getWorkerInfo(string $workerID)
+    {
+        return $this->workers[$workerID]['info'] ?? null;
     }
 
     public function daemonize()
