@@ -61,6 +61,29 @@ abstract class Master extends EventEmitter implements HandlerInterface
         $this->loop->run();
     }
 
+    public function daemonize()
+    {
+        $pid = pcntl_fork();
+
+        if ($pid > 0) {
+            exit(0);
+        } else if ($pid < 0) {
+            // TODO throw
+            throw new \Exception();
+        }
+
+        posix_setsid();
+        // 确保不会成为session组长
+        $pid = pcntl_fork();
+        if ($pid > 0) {
+            exit(0);
+        } else if ($pid < 0) {
+            // TODO throw
+            throw new \Exception();
+        }
+        umask(0);
+    }
+
     /**
      * 将消息写入缓冲区.
      * @param string $workerID
