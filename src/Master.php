@@ -27,7 +27,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
     private $processTimer;
 
     /** @var LoopInterface */
-    protected $loop;
+    private $loop;
 
     /**
      * @example
@@ -78,25 +78,6 @@ abstract class Master extends EventEmitter implements HandlerInterface
         }
     }
 
-    /**
-     * @param string $workerID
-     * @return array|null
-     */
-    public function getWorkerInfo(string $workerID)
-    {
-        return $this->workers[$workerID]['info'] ?? null;
-    }
-
-    public function addSignalHandler(int $sig, callable $handler)
-    {
-        $this->loop->addSignal($sig, $handler);
-    }
-
-    public function removeSignalHandler(int $sig)
-    {
-        $this->removeSignalHandler($sig);
-    }
-
     public function daemonize()
     {
         $pid = pcntl_fork();
@@ -118,6 +99,41 @@ abstract class Master extends EventEmitter implements HandlerInterface
             throw new \Exception();
         }
         umask(0);
+    }
+
+    /**
+     * @param string $workerID
+     * @return array|null
+     */
+    public function getWorkerInfo(string $workerID)
+    {
+        return $this->workers[$workerID]['info'] ?? null;
+    }
+
+    public function addSignalHandler(int $sig, callable $handler)
+    {
+        $this->loop->addSignal($sig, $handler);
+    }
+
+    public function removeSignalHandler(int $sig, callable $handler)
+    {
+        $this->loop->removeSignal($sig, $handler);
+    }
+
+    public function addTimer(float $interval, bool $periodic, callable $handler): TimerInterface
+    {
+        if ($periodic) {
+            $timer = $this->loop->addPeriodicTimer($interval, $handler);
+        } else {
+            $timer = $this->loop->addTimer($interval, $handler);
+        }
+
+        return $timer;
+    }
+
+    public function removeTimer(TimerInterface $timer)
+    {
+        $this->loop->cancelTimer($timer);
     }
 
     /**
