@@ -4,6 +4,7 @@ namespace Archman\Whisper;
 
 use Archman\Whisper\Exception\InvalidSocketException;
 use Archman\Whisper\Traits\SignalTrait;
+use Archman\Whisper\Traits\TimerTrait;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
@@ -11,6 +12,7 @@ use React\Stream\DuplexResourceStream;
 abstract class Worker implements HandlerInterface
 {
     use SignalTrait;
+    use TimerTrait;
 
     /** @var Communicator */
     private $communicator;
