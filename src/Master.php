@@ -70,6 +70,16 @@ abstract class Master extends EventEmitter implements HandlerInterface
         return $this->workers[$workerID]['info'] ?? null;
     }
 
+    public function addSignalHandler(int $sig, callable $handler)
+    {
+        $this->loop->addSignal($sig, $handler);
+    }
+
+    public function removeSignalHandler(int $sig)
+    {
+        $this->removeSignalHandler($sig);
+    }
+
     public function daemonize()
     {
         $pid = pcntl_fork();
