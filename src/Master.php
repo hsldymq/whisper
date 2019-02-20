@@ -2,6 +2,7 @@
 
 namespace Archman\Whisper;
 
+use Archman\Whisper\Traits\SignalTrait;
 use Evenement\EventEmitter;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
@@ -10,6 +11,8 @@ use React\Stream\DuplexResourceStream;
 
 abstract class Master extends EventEmitter implements HandlerInterface
 {
+    use SignalTrait;
+
     /**
      * @var array 数据结构
      *  [
@@ -108,16 +111,6 @@ abstract class Master extends EventEmitter implements HandlerInterface
     public function getWorkerInfo(string $workerID)
     {
         return $this->workers[$workerID]['info'] ?? null;
-    }
-
-    public function addSignalHandler(int $sig, callable $handler)
-    {
-        $this->loop->addSignal($sig, $handler);
-    }
-
-    public function removeSignalHandler(int $sig, callable $handler)
-    {
-        $this->loop->removeSignal($sig, $handler);
     }
 
     public function addTimer(float $interval, bool $periodic, callable $handler): TimerInterface
