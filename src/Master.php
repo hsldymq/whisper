@@ -5,6 +5,7 @@ namespace Archman\Whisper;
 use Evenement\EventEmitter;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
+use React\EventLoop\TimerInterface;
 use React\Stream\DuplexResourceStream;
 
 abstract class Master extends EventEmitter implements HandlerInterface
@@ -21,6 +22,9 @@ abstract class Master extends EventEmitter implements HandlerInterface
      *  ]
      */
     private $workers = [];
+
+    /** @var TimerInterface */
+    private $processTimer;
 
     /** @var LoopInterface */
     protected $loop;
@@ -55,10 +59,23 @@ abstract class Master extends EventEmitter implements HandlerInterface
      */
     public function process(float $interval)
     {
-        $this->loop->addTimer($interval, function () {
+        $this->processTimer = $this->loop->addTimer($interval, function () {
             $this->loop->stop();
+            $this->processTimer = null;
         });
         $this->loop->run();
+    }
+
+    /**
+     * 停止阻塞处理.
+     */
+    public function stopProcess()
+    {
+        $this->loop->stop();
+        if ($this->processTimer) {
+            $this->loop->cancelTimer($this->processTimer);
+            $this->processTimer = null;
+        }
     }
 
     /**
