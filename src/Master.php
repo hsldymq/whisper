@@ -2,6 +2,7 @@
 
 namespace Archman\Whisper;
 
+use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TimerTrait;
 use Evenement\EventEmitter;

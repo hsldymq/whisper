@@ -1,6 +1,8 @@
 <?php
 
-namespace Archman\Whisper;
+namespace Archman\Whisper\Interfaces;
+
+use Archman\Whisper\Message;
 
 interface HandlerInterface
 {

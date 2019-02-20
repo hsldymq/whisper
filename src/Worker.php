@@ -3,6 +3,7 @@
 namespace Archman\Whisper;
 
 use Archman\Whisper\Exception\InvalidSocketException;
+use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TimerTrait;
 use React\EventLoop\Factory;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Archman\Whisper;
+namespace Archman\Whisper\Interfaces;
 
 interface WorkerFactoryInterface
 {
