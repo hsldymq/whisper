@@ -2,11 +2,12 @@
 
 namespace Archman\Whisper;
 
+use Evenement\EventEmitter;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
 
-abstract class Master implements HandlerInterface
+abstract class Master extends EventEmitter implements HandlerInterface
 {
     /**
      * @var array 数据结构
@@ -82,7 +83,7 @@ abstract class Master implements HandlerInterface
             return false;
         }
 
-        $this->onSendingMessage($msg);
+        $this->emit('onSendingMessage', [$msg]);
 
         return $communicator->send($msg);
     }
@@ -117,7 +118,7 @@ abstract class Master implements HandlerInterface
                 'info' => [],
             ];
             $stream->on("close", function () use ($workerID) {
-                $this->onWorkerExit($workerID);
+                $this->emit("onWorkerExit", [$workerID]);
                 unset($this->workers[$workerID]);
                 echo $workerID . " Closed\n";
             });
@@ -146,8 +147,4 @@ abstract class Master implements HandlerInterface
      * 继承这个方法做一些额外的初始化操作
      */
     protected function init() {}
-
-    protected function onWorkerExit(string $workerID) {}
-
-    protected function onSendingMessage(Message $msg) {}
 }
