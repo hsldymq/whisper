@@ -17,6 +17,9 @@ abstract class Master extends EventEmitter implements HandlerInterface
     use SignalTrait;
     use TimerTrait;
 
+    /** @var LoopInterface */
+    protected $loop;
+
     /**
      * @var array 数据结构
      *  [
@@ -28,10 +31,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
      *      ...
      *  ]
      */
-    protected $workers = [];
-
-    /** @var LoopInterface */
-    protected $loop;
+    private $workers = [];
 
     /** @var TimerInterface */
     private $processTimer = null;
@@ -119,19 +119,62 @@ abstract class Master extends EventEmitter implements HandlerInterface
      * @param string $key
      * @return array|null
      */
-    public function getWorkerInfo(string $workerID, string $key)
+    protected function getWorkerInfo(string $workerID, string $key)
     {
         return $this->workers[$workerID]['info'][$key] ?? null;
+    }
+
+    protected function setWorkerInfo(string $workerID, string $key, $value): bool
+    {
+        if (!isset($this->workers[$workerID])) {
+            return false;
+        }
+
+        $this->workers[$workerID]['info'][$key] = $value;
+
+        return true;
     }
 
     /**
      * @param string $workerID
      * @return int|null
      */
-    public function getWorkerPID(string $workerID)
+    protected function getWorkerPID(string $workerID)
     {
         return $this->workers[$workerID]['pid'] ?? null;
     }
+
+    /**
+     * @param string $workerID
+     * @return Communicator|null
+     */
+    protected function getCommunicator(string $workerID)
+    {
+        return $this->workers[$workerID]['communicator'] ?? null;
+    }
+
+    protected function removeWorker(string $workerID)
+    {
+        if (isset($this->workers[$workerID])) {
+            unset($this->workers[$workerID]);
+        }
+    }
+
+    protected function isWorkerDisconnected(string $workerID): bool
+    {
+        $c = $this->getCommunicator($workerID);
+
+        if ($c) {
+            return !$c->isReadable() && !$c->isWritable();
+        }
+
+        return true;
+    }
+
+    /**
+     * 继承这个方法做一些额外的初始化操作
+     */
+    protected function init() {}
 
     /**
      * 将消息写入缓冲区.
@@ -214,9 +257,4 @@ abstract class Master extends EventEmitter implements HandlerInterface
 
         return $workerID;
     }
-
-    /**
-     * 继承这个方法做一些额外的初始化操作
-     */
-    protected function init() {}
 }
