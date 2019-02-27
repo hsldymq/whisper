@@ -28,13 +28,13 @@ abstract class Master extends EventEmitter implements HandlerInterface
      *      ...
      *  ]
      */
-    private $workers = [];
+    protected $workers = [];
+
+    /** @var LoopInterface */
+    protected $loop;
 
     /** @var TimerInterface */
     private $processTimer = null;
-
-    /** @var LoopInterface */
-    private $loop;
 
     /**
      * @example
@@ -46,7 +46,6 @@ abstract class Master extends EventEmitter implements HandlerInterface
      *          $this->process(2);      // block for 2 seconds.
      *      }
      *  }
-     *
      */
     abstract public function run();
 
@@ -60,7 +59,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
     /**
      * 开始阻塞处理消息传输和处理,直至指定时间返回.
      *
-     * @param float|null $interval 阻塞时间,秒. 不传代表永久阻塞.
+     * @param float $interval 阻塞时间(秒). 不传代表永久阻塞.
      * @example $master->run(0.1);  // 阻塞100毫秒后返回.
      * @example $master->run(2);    // 阻塞2秒后返回.
      */
@@ -160,6 +159,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
             return null;
         }
 
+        $workerID = Helper::uuid();
         $pid = pcntl_fork();
         if ($pid > 0) {
             // parent
@@ -169,7 +169,6 @@ abstract class Master extends EventEmitter implements HandlerInterface
             $stream = new DuplexResourceStream($socketPair[0], $this->loop);
             $communicator = new Communicator($stream, $this);
 
-            $workerID = spl_object_hash($communicator);
             $this->workers[$workerID] = [
                 'pid' => $pid,
                 'communicator' => $communicator,
@@ -189,7 +188,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
                 $this->loop
             );
 
-            $worker = $factory->makeWorker($socketPair[1]);
+            $worker = $factory->makeWorker($workerID, $socketPair[1]);
             $worker->run();
             exit();
         } else {
