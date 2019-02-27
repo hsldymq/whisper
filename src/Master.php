@@ -167,11 +167,15 @@ abstract class Master extends EventEmitter
         return $this->workers[$workerID]['communicator'] ?? null;
     }
 
-    protected function removeWorker(string $workerID)
+    protected function removeWorker(string $workerID): bool
     {
         if (isset($this->workers[$workerID])) {
             unset($this->workers[$workerID]);
+
+            return true;
         }
+
+        return false;
     }
 
     protected function isWorkerDisconnected(string $workerID): bool
@@ -242,11 +246,18 @@ abstract class Master extends EventEmitter
             ];
             $onClose = (function (string $workerID) {
                 return function () use ($workerID) {
-                    $this->removeWorker($workerID);
-                    $this->emit("workerExit", [$workerID]);
+                    if ($this->removeWorker($workerID)) {
+                        $this->emit("workerExit", [$workerID]);
+                    }
                 };
             })($workerID);
             $stream->on("close", $onClose);
+
+            if ($this->isWorkerDisconnected($workerID)) {
+                // 子进程有可能在初始化时出错,这里做一次检测
+                $stream->emit('close');
+                return null;
+            }
         } else if ($pid === 0) {
             // child
             fclose($socketPair[0]);
