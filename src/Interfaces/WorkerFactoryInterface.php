@@ -2,7 +2,9 @@
 
 namespace Archman\Whisper\Interfaces;
 
+use Archman\Whisper\Worker;
+
 interface WorkerFactoryInterface
 {
-    public function makeWorker($socketFD): Worker;
+    public function makeWorker(string $id, $socketFD): Worker;
 }

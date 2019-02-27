@@ -15,18 +15,22 @@ abstract class Worker implements HandlerInterface
     use SignalTrait;
     use TimerTrait;
 
+    /** @var string */
+    private $id;
+
     /** @var Communicator */
     private $communicator;
 
     /** @var LoopInterface */
     protected $loop;
 
-    final function __construct($socketFD)
+    final function __construct(string $id, $socketFD)
     {
         if (!is_resource($socketFD)) {
             throw new InvalidSocketException();
         }
 
+        $this->id = $id;
         $this->loop = Factory::create();
         $stream = new DuplexResourceStream($socketFD, $this->loop);
         $this->communicator = new Communicator($stream, $this);
@@ -45,6 +49,11 @@ abstract class Worker implements HandlerInterface
     public function run()
     {
         $this->loop->run();
+    }
+
+    public function getID(): string
+    {
+        return $this->id;
     }
 
     final protected function sendMessage(Message $msg)
