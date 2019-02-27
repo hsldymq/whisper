@@ -109,13 +109,28 @@ abstract class Master extends EventEmitter implements HandlerInterface
         umask(0);
     }
 
+    public function isWorkerExists(string $workerID): bool
+    {
+        return isset($this->workers[$workerID]);
+    }
+
     /**
      * @param string $workerID
+     * @param string $key
      * @return array|null
      */
-    public function getWorkerInfo(string $workerID)
+    public function getWorkerInfo(string $workerID, string $key)
     {
-        return $this->workers[$workerID]['info'] ?? null;
+        return $this->workers[$workerID]['info'][$key] ?? null;
+    }
+
+    /**
+     * @param string $workerID
+     * @return int|null
+     */
+    public function getWorkerPID(string $workerID)
+    {
+        return $this->workers[$workerID]['pid'] ?? null;
     }
 
     /**
