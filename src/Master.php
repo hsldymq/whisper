@@ -49,11 +49,12 @@ abstract class Master extends EventEmitter implements HandlerInterface
      */
     abstract public function run();
 
-    final public function __construct()
+    /**
+     * 子类重载构造函数要确保基类构造函数被调用.
+     */
+    public function __construct()
     {
         $this->loop = Factory::create();
-
-        $this->init();
     }
 
     /**
@@ -170,11 +171,6 @@ abstract class Master extends EventEmitter implements HandlerInterface
 
         return true;
     }
-
-    /**
-     * 继承这个方法做一些额外的初始化操作
-     */
-    protected function init() {}
 
     /**
      * 将消息写入缓冲区.

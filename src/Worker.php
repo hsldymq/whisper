@@ -16,7 +16,7 @@ abstract class Worker implements HandlerInterface
     use TimerTrait;
 
     /** @var string */
-    private $id;
+    private $workerID;
 
     /** @var Communicator */
     private $communicator;
@@ -24,20 +24,23 @@ abstract class Worker implements HandlerInterface
     /** @var LoopInterface */
     protected $loop;
 
-    final function __construct(string $id, $socketFD)
+    /**
+     * 子类重载构造函数要确保基类构造函数被调用.
+     *
+     * @param string $id
+     * @param resource $socketFD
+     * @throws
+     */
+    function __construct(string $id, $socketFD)
     {
         if (!is_resource($socketFD)) {
             throw new InvalidSocketException();
         }
 
-        $this->id = $id;
+        $this->workerID = $id;
         $this->loop = Factory::create();
         $stream = new DuplexResourceStream($socketFD, $this->loop);
         $this->communicator = new Communicator($stream, $this);
-
-        $this->init();
-
-        return $this;
     }
 
     function __destruct()
@@ -51,9 +54,9 @@ abstract class Worker implements HandlerInterface
         $this->loop->run();
     }
 
-    public function getID(): string
+    public function getWorkerID(): string
     {
-        return $this->id;
+        return $this->workerID;
     }
 
     final protected function sendMessage(Message $msg)
@@ -66,9 +69,4 @@ abstract class Worker implements HandlerInterface
 
         $this->communicator->send($msg);
     }
-
-    /**
-     * 继承这个方法做一些初始化操作
-     */
-    protected function init() {}
 }
