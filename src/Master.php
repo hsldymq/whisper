@@ -3,6 +3,7 @@
 namespace Archman\Whisper;
 
 use Archman\Whisper\Interfaces\HandlerInterface;
+use Archman\Whisper\Interfaces\WorkerFactoryInterface;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TimerTrait;
 use Evenement\EventEmitter;
@@ -30,7 +31,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
     private $workers = [];
 
     /** @var TimerInterface */
-    private $processTimer;
+    private $processTimer = null;
 
     /** @var LoopInterface */
     private $loop;
@@ -59,16 +60,18 @@ abstract class Master extends EventEmitter implements HandlerInterface
     /**
      * 开始阻塞处理消息传输和处理,直至指定时间返回.
      *
-     * @param float $interval 阻塞时间,秒.
+     * @param float|null $interval 阻塞时间,秒. 不传代表永久阻塞.
      * @example $master->run(0.1);  // 阻塞100毫秒后返回.
      * @example $master->run(2);    // 阻塞2秒后返回.
      */
-    public function process(float $interval)
+    public function process(float $interval = null)
     {
-        $this->processTimer = $this->loop->addTimer($interval, function () {
-            $this->loop->stop();
-            $this->processTimer = null;
-        });
+        if ($interval === null) {
+            $this->processTimer = $this->loop->addTimer($interval, function () {
+                $this->loop->stop();
+                $this->processTimer = null;
+            });
+        }
         $this->loop->run();
     }
 

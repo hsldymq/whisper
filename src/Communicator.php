@@ -5,15 +5,16 @@ namespace Archman\Whisper;
 use Archman\ByteOrder\ByteOrder;
 use Archman\ByteOrder\Operator;
 use Archman\Whisper\Exception\CheckMagicWordException;
+use Archman\Whisper\Interfaces\HandlerInterface;
 use React\Stream\DuplexResourceStream;
 
 class Communicator
 {
-    // 消息头总长度
-    const HEADER_SIZE = 12;
-
     // 头部magic word,用于标志一个正确的消息开始
     const MAGIC_WORD = "\0\0arch\0\0";
+
+    // 消息头总长度
+    const HEADER_SIZE = 12;
 
     // 头部消息类型字段长度(字节)
     const HEADER_TYPE_SIZE = 1;
