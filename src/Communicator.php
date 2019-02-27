@@ -117,6 +117,11 @@ class Communicator
         );
     }
 
+    /**
+     * @param string $header
+     * @return array
+     * @throws CheckMagicWordException
+     */
     public static function parseHeader(string $header): array
     {
         $magicWordLength = strlen(self::MAGIC_WORD);
