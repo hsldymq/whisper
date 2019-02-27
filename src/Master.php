@@ -2,6 +2,7 @@
 
 namespace Archman\Whisper;
 
+use Archman\Whisper\Exception\CreateSocketException;
 use Archman\Whisper\Exception\ForkException;
 use Archman\Whisper\Interfaces\ErrorHandlerInterface;
 use Archman\Whisper\Interfaces\HandlerInterface;
@@ -223,8 +224,7 @@ abstract class Master extends EventEmitter
         $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
         if ($socketPair === false) {
-            // TODO throw exception
-            $this->raiseError(new \Exception());
+            $this->raiseError(new CreateSocketException());
             return null;
         }
 
