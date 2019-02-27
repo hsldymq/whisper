@@ -4,6 +4,7 @@ namespace Archman\Whisper;
 
 use Archman\Whisper\Exception\CreateSocketException;
 use Archman\Whisper\Exception\ForkException;
+use Archman\Whisper\Exception\UnwritableSocketException;
 use Archman\Whisper\Interfaces\ErrorHandlerInterface;
 use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Interfaces\WorkerFactoryInterface;
@@ -205,8 +206,7 @@ abstract class Master extends EventEmitter
 
         $communicator = $this->getCommunicator($workerID);
         if (!$communicator->isWritable()) {
-            // TODO throw exception
-            $this->raiseError(new \Exception());
+            $this->raiseError(new UnwritableSocketException());
             return false;
         }
 

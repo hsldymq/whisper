@@ -3,6 +3,7 @@
 namespace Archman\Whisper;
 
 use Archman\Whisper\Exception\InvalidSocketException;
+use Archman\Whisper\Exception\UnwritableSocketException;
 use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Traits\ErrorTrait;
 use Archman\Whisper\Traits\SignalTrait;
@@ -69,8 +70,7 @@ abstract class Worker implements HandlerInterface
     final protected function sendMessage(Message $msg)
     {
         if (!$this->communicator->isWritable()) {
-            // TODO throw exception
-            $this->raiseError(new \Exception());
+            $this->raiseError(new UnwritableSocketException());
             return;
         }
 
