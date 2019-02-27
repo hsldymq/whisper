@@ -2,8 +2,10 @@
 
 namespace Archman\Whisper;
 
+use Archman\Whisper\Interfaces\ErrorHandlerInterface;
 use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Interfaces\WorkerFactoryInterface;
+use Archman\Whisper\Traits\ErrorTrait;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TimerTrait;
 use Evenement\EventEmitter;
@@ -12,10 +14,11 @@ use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 use React\Stream\DuplexResourceStream;
 
-abstract class Master extends EventEmitter implements HandlerInterface
+abstract class Master extends EventEmitter
 {
     use SignalTrait;
     use TimerTrait;
+    use ErrorTrait;
 
     /** @var LoopInterface */
     protected $loop;
@@ -48,6 +51,8 @@ abstract class Master extends EventEmitter implements HandlerInterface
      *  }
      */
     abstract public function run();
+
+    abstract public function onMessage(string $workerID, Message $msg);
 
     /**
      * 子类重载构造函数要确保基类构造函数被调用.
@@ -87,15 +92,15 @@ abstract class Master extends EventEmitter implements HandlerInterface
         }
     }
 
-    public function daemonize()
+    public function daemonize(): bool
     {
         $pid = pcntl_fork();
-
         if ($pid > 0) {
             exit(0);
         } else if ($pid < 0) {
             // TODO throw
-            throw new \Exception();
+            $this->raiseError(new \Exception());
+            return false;
         }
 
         posix_setsid();
@@ -105,12 +110,20 @@ abstract class Master extends EventEmitter implements HandlerInterface
             exit(0);
         } else if ($pid < 0) {
             // TODO throw
-            throw new \Exception();
+            $this->raiseError(new \Exception());
+            return false;
         }
         umask(0);
+
+        return true;
     }
 
-    public function isWorkerExists(string $workerID): bool
+    protected function workerNum(): int
+    {
+        return count($this->workers);
+    }
+
+    protected function isWorkerExists(string $workerID): bool
     {
         return isset($this->workers[$workerID]);
     }
@@ -180,17 +193,16 @@ abstract class Master extends EventEmitter implements HandlerInterface
      */
     final protected function sendMessage(string $workerID, Message $msg): bool
     {
-        if (!isset($this->workers[$workerID])) {
+        if (!$this->isWorkerExists($workerID)) {
             // TODO throw exception
-            $this->handleError(new \Exception());
+            $this->raiseError(new \Exception());
             return false;
         }
 
-        /** @var Communicator $communicator */
-        $communicator = $this->workers[$workerID]['communicator'];
+        $communicator = $this->getCommunicator($workerID);
         if (!$communicator->isWritable()) {
             // TODO throw exception
-            $this->handleError(new \Exception());
+            $this->raiseError(new \Exception());
             return false;
         }
 
@@ -209,7 +221,7 @@ abstract class Master extends EventEmitter implements HandlerInterface
 
         if ($socketPair === false) {
             // TODO throw exception
-            $this->handleError(new \Exception());
+            $this->raiseError(new \Exception());
             return null;
         }
 
@@ -221,36 +233,74 @@ abstract class Master extends EventEmitter implements HandlerInterface
             unset($socketPair[1]);
 
             $stream = new DuplexResourceStream($socketPair[0], $this->loop);
-            $communicator = new Communicator($stream, $this);
+            $communicator = new Communicator($stream, $this->newHandler($workerID));
 
             $this->workers[$workerID] = [
                 'pid' => $pid,
                 'communicator' => $communicator,
                 'info' => [],
             ];
-            $stream->on("close", function () use ($workerID) {
-                $this->emit("onWorkerExit", [$workerID]);
-                unset($this->workers[$workerID]);
-                echo $workerID . " Closed\n";
-            });
+            $onClose = (function (string $workerID) {
+                return function () use ($workerID) {
+                    $this->removeWorker($workerID);
+                    $this->emit("workerExit", [$workerID]);
+                };
+            })($workerID);
+            $stream->on("close", $onClose);
         } else if ($pid === 0) {
             // child
             fclose($socketPair[0]);
-            unset(
-                $socketPair[0],
-                $this->workers,
-                $this->loop
-            );
+            unset($socketPair[0], $this->loop, $this->workers);
+            $this->removeAllListeners();
+            $this->removeAllSignalHandlers();
+            $this->removeAllTimers();
 
             $worker = $factory->makeWorker($workerID, $socketPair[1]);
             $worker->run();
-            exit();
+            exit(0);
         } else {
             // TODO throw exception
-            $this->handleError(new \Exception());
+            $this->raiseError(new \Exception());
             return null;
         }
 
         return $workerID;
+    }
+
+    private function newHandler(string $workerID): HandlerInterface
+    {
+        return new class($this, $workerID) implements HandlerInterface {
+            /** @var Master */
+            private $master;
+
+            /** @var string */
+            private $workerID;
+
+            public function __construct(Master $master, string $workerID)
+            {
+                $this->master = $master;
+                $this->workerID = $workerID;
+            }
+
+            public function __destruct()
+            {
+                unset($this->master);
+            }
+
+            public function handleMessage(Message $msg)
+            {
+                $this->master->onMessage($this->workerID, $msg);
+            }
+
+            public function handleError(\Throwable $e)
+            {
+                if ($this->master instanceof ErrorHandlerInterface) {
+                    $this->master->onError($e);
+                    return;
+                }
+
+                throw $e;
+            }
+        };
     }
 }
