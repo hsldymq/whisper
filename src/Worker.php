@@ -4,6 +4,7 @@ namespace Archman\Whisper;
 
 use Archman\Whisper\Exception\InvalidSocketException;
 use Archman\Whisper\Interfaces\HandlerInterface;
+use Archman\Whisper\Traits\ErrorTrait;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TimerTrait;
 use React\EventLoop\Factory;
@@ -14,6 +15,7 @@ abstract class Worker implements HandlerInterface
 {
     use SignalTrait;
     use TimerTrait;
+    use ErrorTrait;
 
     /** @var string */
     private $workerID;
@@ -59,11 +61,16 @@ abstract class Worker implements HandlerInterface
         return $this->workerID;
     }
 
+    final public function handleError(\Throwable $e)
+    {
+        $this->raiseError($e);
+    }
+
     final protected function sendMessage(Message $msg)
     {
         if (!$this->communicator->isWritable()) {
             // TODO throw exception
-            $this->handleError(new \Exception());
+            $this->raiseError(new \Exception());
             return;
         }
 
