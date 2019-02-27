@@ -6,7 +6,7 @@ use Archman\Whisper\Message;
 
 interface HandlerInterface
 {
-    public function handleError(\Throwable $e);
-
     public function handleMessage(Message $msg);
+
+    public function handleError(\Throwable $e);
 }
