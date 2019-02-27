@@ -2,6 +2,7 @@
 
 namespace Archman\Whisper;
 
+use Archman\Whisper\Exception\ForkException;
 use Archman\Whisper\Interfaces\ErrorHandlerInterface;
 use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Interfaces\WorkerFactoryInterface;
@@ -98,8 +99,7 @@ abstract class Master extends EventEmitter
         if ($pid > 0) {
             exit(0);
         } else if ($pid < 0) {
-            // TODO throw
-            $this->raiseError(new \Exception());
+            $this->raiseError(new ForkException("", ForkException::DAEMONIZING));
             return false;
         }
 
@@ -109,8 +109,7 @@ abstract class Master extends EventEmitter
         if ($pid > 0) {
             exit(0);
         } else if ($pid < 0) {
-            // TODO throw
-            $this->raiseError(new \Exception());
+            $this->raiseError(new ForkException("", ForkException::DAEMONIZING));
             return false;
         }
         umask(0);
@@ -270,8 +269,7 @@ abstract class Master extends EventEmitter
             $worker->run();
             exit(0);
         } else {
-            // TODO throw exception
-            $this->raiseError(new \Exception());
+            $this->raiseError(new ForkException("", ForkException::CREATING));
             return null;
         }
 
