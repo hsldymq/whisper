@@ -24,9 +24,6 @@ abstract class AbstractMaster extends EventEmitter
     use TimerTrait;
     use ErrorTrait;
 
-    /** @var LoopInterface */
-    protected $eventLoop;
-
     /**
      * @var array 数据结构
      *  [
@@ -39,6 +36,9 @@ abstract class AbstractMaster extends EventEmitter
      *  ]
      */
     private $workers = [];
+
+    /** @var LoopInterface */
+    private $eventLoop;
 
     /** @var TimerInterface */
     private $processTimer = null;
@@ -118,6 +118,11 @@ abstract class AbstractMaster extends EventEmitter
         umask(0);
 
         return true;
+    }
+
+    protected function getEventLoop(): LoopInterface
+    {
+        return $this->eventLoop;
     }
 
     protected function workerNum(): int

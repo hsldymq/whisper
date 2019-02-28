@@ -25,7 +25,7 @@ abstract class AbstractWorker implements HandlerInterface
     private $communicator;
 
     /** @var LoopInterface */
-    protected $eventLoop;
+    private $eventLoop;
 
     /**
      * 子类重载构造函数要确保基类构造函数被调用.
@@ -60,6 +60,11 @@ abstract class AbstractWorker implements HandlerInterface
     public function getWorkerID(): string
     {
         return $this->workerID;
+    }
+
+    protected function getEventLoop(): LoopInterface
+    {
+        return $this->eventLoop;
     }
 
     final public function handleError(\Throwable $e)
