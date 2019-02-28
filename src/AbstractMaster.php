@@ -75,7 +75,7 @@ abstract class AbstractMaster extends EventEmitter
      */
     public function process(float $interval = null)
     {
-        if ($interval === null) {
+        if ($interval !== null) {
             $this->processTimer = $this->eventLoop->addTimer($interval, function () {
                 $this->eventLoop->stop();
                 $this->processTimer = null;
