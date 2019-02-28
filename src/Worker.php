@@ -36,7 +36,7 @@ abstract class Worker implements HandlerInterface
      */
     function __construct(string $id, $socketFD)
     {
-        if (!is_resource($socketFD)) {
+        if (!is_resource($socketFD) || get_resource_type($socketFD) !== 'stream' || feof($socketFD)) {
             throw new InvalidSocketException();
         }
 
