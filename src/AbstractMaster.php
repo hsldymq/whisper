@@ -265,10 +265,10 @@ abstract class AbstractMaster extends EventEmitter
         } else if ($pid === 0) {
             // child
             fclose($socketPair[0]);
-            unset($socketPair[0], $this->eventLoop, $this->workers);
             $this->removeAllListeners();
             $this->removeAllSignalHandlers();
             $this->removeAllTimers();
+            unset($socketPair[0], $this->eventLoop, $this->workers);
 
             $worker = $factory->makeWorker($workerID, $socketPair[1]);
             $worker->run();
