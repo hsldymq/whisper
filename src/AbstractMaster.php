@@ -25,7 +25,7 @@ abstract class AbstractMaster extends EventEmitter
     use ErrorTrait;
 
     /** @var LoopInterface */
-    protected $loop;
+    protected $eventLoop;
 
     /**
      * @var array 数据结构
@@ -63,7 +63,7 @@ abstract class AbstractMaster extends EventEmitter
      */
     public function __construct()
     {
-        $this->loop = Factory::create();
+        $this->eventLoop = Factory::create();
     }
 
     /**
@@ -76,12 +76,12 @@ abstract class AbstractMaster extends EventEmitter
     public function process(float $interval = null)
     {
         if ($interval === null) {
-            $this->processTimer = $this->loop->addTimer($interval, function () {
-                $this->loop->stop();
+            $this->processTimer = $this->eventLoop->addTimer($interval, function () {
+                $this->eventLoop->stop();
                 $this->processTimer = null;
             });
         }
-        $this->loop->run();
+        $this->eventLoop->run();
     }
 
     /**
@@ -89,9 +89,9 @@ abstract class AbstractMaster extends EventEmitter
      */
     public function stopProcess()
     {
-        $this->loop->stop();
+        $this->eventLoop->stop();
         if ($this->processTimer) {
-            $this->loop->cancelTimer($this->processTimer);
+            $this->eventLoop->cancelTimer($this->processTimer);
             $this->processTimer = null;
         }
     }
@@ -235,7 +235,7 @@ abstract class AbstractMaster extends EventEmitter
             fclose($socketPair[1]);
             unset($socketPair[1]);
 
-            $stream = new DuplexResourceStream($socketPair[0], $this->loop);
+            $stream = new DuplexResourceStream($socketPair[0], $this->eventLoop);
             $communicator = new Communicator($stream, $this->newHandler($workerID));
 
             $this->workers[$workerID] = [
@@ -260,7 +260,7 @@ abstract class AbstractMaster extends EventEmitter
         } else if ($pid === 0) {
             // child
             fclose($socketPair[0]);
-            unset($socketPair[0], $this->loop, $this->workers);
+            unset($socketPair[0], $this->eventLoop, $this->workers);
             $this->removeAllListeners();
             $this->removeAllSignalHandlers();
             $this->removeAllTimers();

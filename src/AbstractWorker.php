@@ -25,7 +25,7 @@ abstract class AbstractWorker implements HandlerInterface
     private $communicator;
 
     /** @var LoopInterface */
-    protected $loop;
+    protected $eventLoop;
 
     /**
      * 子类重载构造函数要确保基类构造函数被调用.
@@ -41,20 +41,20 @@ abstract class AbstractWorker implements HandlerInterface
         }
 
         $this->workerID = $id;
-        $this->loop = Factory::create();
-        $stream = new DuplexResourceStream($socketFD, $this->loop);
+        $this->eventLoop = Factory::create();
+        $stream = new DuplexResourceStream($socketFD, $this->eventLoop);
         $this->communicator = new Communicator($stream, $this);
     }
 
     function __destruct()
     {
         unset($this->communicator);
-        unset($this->loop);
+        unset($this->eventLoop);
     }
 
     public function run()
     {
-        $this->loop->run();
+        $this->eventLoop->run();
     }
 
     public function getWorkerID(): string

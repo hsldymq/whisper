@@ -6,7 +6,7 @@ use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 
 /**
- * @property LoopInterface $loop
+ * @property LoopInterface $eventLoop
  */
 trait TimerTrait
 {
@@ -15,9 +15,9 @@ trait TimerTrait
     public function addTimer(float $interval, bool $periodic, callable $handler): TimerInterface
     {
         if ($periodic) {
-            $timer = $this->loop->addPeriodicTimer($interval, $handler);
+            $timer = $this->eventLoop->addPeriodicTimer($interval, $handler);
         } else {
-            $timer = $this->loop->addTimer($interval, $handler);
+            $timer = $this->eventLoop->addTimer($interval, $handler);
         }
 
         $this->timers[] = $timer;
@@ -27,7 +27,7 @@ trait TimerTrait
 
     public function removeTimer(TimerInterface $timer)
     {
-        $this->loop->cancelTimer($timer);
+        $this->eventLoop->cancelTimer($timer);
 
         foreach ($this->timers as $idx => $each) {
             if ($each === $timer) {
@@ -39,7 +39,7 @@ trait TimerTrait
     public function removeAllTimers()
     {
         foreach ($this->timers as $idx => $each) {
-            $this->loop->cancelTimer($each);
+            $this->eventLoop->cancelTimer($each);
             unset($this->timers[$idx]);
         }
     }

@@ -5,7 +5,7 @@ namespace Archman\Whisper\Traits;
 use React\EventLoop\LoopInterface;
 
 /**
- * @property LoopInterface $loop
+ * @property LoopInterface $eventLoop
  */
 trait SignalTrait
 {
@@ -13,14 +13,14 @@ trait SignalTrait
 
     public function addSignalHandler(int $sig, callable $handler)
     {
-        $this->loop->addSignal($sig, $handler);
+        $this->eventLoop->addSignal($sig, $handler);
 
         $this->signalHandlers[$sig][] = $handler;
     }
 
     public function removeSignalHandler(int $sig, callable $handler)
     {
-        $this->loop->removeSignal($sig, $handler);
+        $this->eventLoop->removeSignal($sig, $handler);
 
         foreach (($this->signalHandlers[$sig] ?? []) as $idx => $h) {
             if ($h === $handler) {
@@ -33,7 +33,7 @@ trait SignalTrait
     {
         foreach ($this->signalHandlers as $sig => $handlers) {
             foreach ($handlers as $idx => $eachHandler) {
-                $this->loop->removeSignal($sig, $eachHandler);
+                $this->eventLoop->removeSignal($sig, $eachHandler);
                 unset($this->signalHandlers[$sig][$idx]);
             }
         }
