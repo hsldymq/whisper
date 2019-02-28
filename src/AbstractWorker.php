@@ -12,7 +12,7 @@ use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
 
-abstract class Worker implements HandlerInterface
+abstract class AbstractWorker implements HandlerInterface
 {
     use SignalTrait;
     use TimerTrait;

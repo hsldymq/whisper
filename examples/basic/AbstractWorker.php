@@ -1,9 +1,9 @@
 <?php
 
 use Archman\Whisper\Message;
-use Archman\Whisper\Worker as BaseWorker;
+use Archman\Whisper\AbstractWorker as BaseWorker;
 
-class Worker extends BaseWorker
+class AbstractWorker extends BaseWorker
 {
     public function handleMessage(Message $msg)
     {

@@ -18,7 +18,7 @@ use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 use React\Stream\DuplexResourceStream;
 
-abstract class Master extends EventEmitter
+abstract class AbstractMaster extends EventEmitter
 {
     use SignalTrait;
     use TimerTrait;
@@ -279,13 +279,13 @@ abstract class Master extends EventEmitter
     private function newHandler(string $workerID): HandlerInterface
     {
         return new class($this, $workerID) implements HandlerInterface {
-            /** @var Master */
+            /** @var AbstractMaster */
             private $master;
 
             /** @var string */
             private $workerID;
 
-            public function __construct(Master $master, string $workerID)
+            public function __construct(AbstractMaster $master, string $workerID)
             {
                 $this->master = $master;
                 $this->workerID = $workerID;

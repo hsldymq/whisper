@@ -3,9 +3,9 @@
 require_once __DIR__.'/WorkerFactory.php';
 
 use Archman\Whisper\Message;
-use Archman\Whisper\Master as BaseMaster;
+use Archman\Whisper\AbstractMaster as BaseMaster;
 
-class Master extends BaseMaster
+class AbstractMaster extends BaseMaster
 {
     public function __construct()
     {
