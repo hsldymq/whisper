@@ -174,17 +174,6 @@ abstract class AbstractMaster extends EventEmitter
         return count($this->workers);
     }
 
-    protected function removeWorker(string $workerID): bool
-    {
-        if (isset($this->workers[$workerID])) {
-            unset($this->workers[$workerID]);
-
-            return true;
-        }
-
-        return false;
-    }
-
     protected function isWorkerExists(string $workerID): bool
     {
         return isset($this->workers[$workerID]);
@@ -199,6 +188,28 @@ abstract class AbstractMaster extends EventEmitter
         }
 
         return true;
+    }
+
+    protected function removeWorker(string $workerID): bool
+    {
+        if (isset($this->workers[$workerID])) {
+            unset($this->workers[$workerID]);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function killWorker(string $workerID, int $signal, bool $remove = true)
+    {
+        if (!($pid = $this->getWorkerPID($workerID))) {
+            return;
+        }
+
+        if (posix_kill($pid, $signal) && $remove) {
+            $this->removeWorker($workerID);
+        }
     }
 
     /**
