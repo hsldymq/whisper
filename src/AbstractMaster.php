@@ -38,7 +38,6 @@ abstract class AbstractMaster extends EventEmitter
      *      $workerID => [
      *          'pid' => xxx,
      *          'communicator' => \Archman\Whisper\Communicator,
-     *          'info' => [],       // 自定义信息
      *      ],
      *      ...
      *  ]
@@ -128,42 +127,6 @@ abstract class AbstractMaster extends EventEmitter
         return true;
     }
 
-    protected function getEventLoop(): LoopInterface
-    {
-        return $this->eventLoop;
-    }
-
-    protected function countWorkers(): int
-    {
-        return count($this->workers);
-    }
-
-    protected function isWorkerExists(string $workerID): bool
-    {
-        return isset($this->workers[$workerID]);
-    }
-
-    /**
-     * @param string $workerID
-     * @param string $key
-     * @return array|null
-     */
-    protected function getWorkerInfo(string $workerID, string $key)
-    {
-        return $this->workers[$workerID]['info'][$key] ?? null;
-    }
-
-    protected function setWorkerInfo(string $workerID, string $key, $value): bool
-    {
-        if (!isset($this->workers[$workerID])) {
-            return false;
-        }
-
-        $this->workers[$workerID]['info'][$key] = $value;
-
-        return true;
-    }
-
     /**
      * @param string $workerID
      * @return int|null
@@ -182,6 +145,16 @@ abstract class AbstractMaster extends EventEmitter
         return $this->workers[$workerID]['communicator'] ?? null;
     }
 
+    protected function getEventLoop(): LoopInterface
+    {
+        return $this->eventLoop;
+    }
+
+    protected function countWorkers(): int
+    {
+        return count($this->workers);
+    }
+
     protected function removeWorker(string $workerID): bool
     {
         if (isset($this->workers[$workerID])) {
@@ -191,6 +164,11 @@ abstract class AbstractMaster extends EventEmitter
         }
 
         return false;
+    }
+
+    protected function isWorkerExists(string $workerID): bool
+    {
+        return isset($this->workers[$workerID]);
     }
 
     protected function isWorkerDisconnected(string $workerID): bool
@@ -254,7 +232,6 @@ abstract class AbstractMaster extends EventEmitter
             $this->workers[$workerID] = [
                 'pid' => $pid,
                 'communicator' => $communicator,
-                'info' => [],
             ];
             $onClose = (function (string $workerID) {
                 return function () use ($workerID) {
