@@ -190,6 +190,11 @@ abstract class AbstractMaster extends EventEmitter
         return true;
     }
 
+    /**
+     * @param string $workerID
+     *
+     * @return bool 不存在指定worker id会返回false
+     */
     protected function removeWorker(string $workerID): bool
     {
         if (isset($this->workers[$workerID])) {
@@ -201,15 +206,18 @@ abstract class AbstractMaster extends EventEmitter
         return false;
     }
 
-    protected function killWorker(string $workerID, int $signal, bool $remove = true)
+    protected function killWorker(string $workerID, int $signal, bool $remove = true): bool
     {
-        if (!($pid = $this->getWorkerPID($workerID))) {
-            return;
+        $pid = $this->getWorkerPID($workerID);
+        if (!$pid || !posix_kill($pid, $signal)) {
+            return false;
         }
 
-        if (posix_kill($pid, $signal) && $remove) {
+        if ($remove) {
             $this->removeWorker($workerID);
         }
+
+        return true;
     }
 
     /**
