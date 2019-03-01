@@ -14,7 +14,7 @@ class BasicMaster extends AbstractMaster
         $this->daemonize();
 
         $this->on('workerExit', function (string $workerID) {
-            $num = $this->workerNum();
+            $num = $this->countWorkers();
             echo "{$workerID} Quit. Number of workers: {$num}\n";
             if ($num === 0) {
                 echo "Master Quit.\n";
