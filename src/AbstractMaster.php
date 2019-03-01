@@ -127,6 +127,11 @@ abstract class AbstractMaster extends EventEmitter
         return true;
     }
 
+    public function getWorkerIDs(): array
+    {
+        return array_keys($this->workers);
+    }
+
     /**
      * @param string $workerID
      * @return int|null
