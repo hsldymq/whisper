@@ -125,7 +125,7 @@ abstract class AbstractMaster extends EventEmitter
         return $this->eventLoop;
     }
 
-    protected function workerNum(): int
+    protected function countWorkers(): int
     {
         return count($this->workers);
     }
