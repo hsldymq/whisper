@@ -11,6 +11,7 @@ use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Interfaces\WorkerFactoryInterface;
 use Archman\Whisper\Traits\ErrorTrait;
 use Archman\Whisper\Traits\SignalTrait;
+use Archman\Whisper\Traits\TerminateTrait;
 use Archman\Whisper\Traits\TimerTrait;
 use Evenement\EventEmitter;
 use React\EventLoop\Factory;
@@ -23,6 +24,7 @@ abstract class AbstractMaster extends EventEmitter
     use SignalTrait;
     use TimerTrait;
     use ErrorTrait;
+    use TerminateTrait;
 
     /**
      * @var array 数据结构
@@ -268,6 +270,7 @@ abstract class AbstractMaster extends EventEmitter
             $this->removeAllListeners();
             $this->removeAllSignalHandlers();
             $this->removeAllTimers();
+            $this->unregisterAllShutdown();
             unset($socketPair[0], $this->eventLoop, $this->workers);
 
             $worker = $factory->makeWorker($workerID, $socketPair[1]);
