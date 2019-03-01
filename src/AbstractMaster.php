@@ -54,6 +54,12 @@ abstract class AbstractMaster extends EventEmitter
      * @example
      *  public function run()
      *  {
+     *      $this->process();
+     *  }
+     *
+     * @example
+     *  public function run()
+     *  {
      *      while (true) {
      *          // do something
      *          // etc. $this->sendMessage(new Message(0, "content"));
@@ -63,6 +69,14 @@ abstract class AbstractMaster extends EventEmitter
      */
     abstract public function run();
 
+    /**
+     * 该方法处理由worker发来的消息.
+     *
+     * @param string $workerID
+     * @param Message $msg
+     *
+     * @return mixed
+     */
     abstract public function onMessage(string $workerID, Message $msg);
 
     /**
