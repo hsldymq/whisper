@@ -37,12 +37,13 @@ class BasicMaster extends AbstractMaster
         $this->addSignalHandler(SIGCHLD, function () {
             pcntl_wait($status);
         });
-
-        echo 'To Exit Press CTRL+C', "\n";
     }
 
     public function run()
     {
+        echo "Press Enter To Start. After Started, Press CTRL+C To Exit.\n";
+        fgets(STDIN);
+
         $factory = new WorkerFactory();
         $workerIDs = [];
 
