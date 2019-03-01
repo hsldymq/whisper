@@ -7,6 +7,7 @@ use Archman\Whisper\Exception\UnwritableSocketException;
 use Archman\Whisper\Interfaces\HandlerInterface;
 use Archman\Whisper\Traits\ErrorTrait;
 use Archman\Whisper\Traits\SignalTrait;
+use Archman\Whisper\Traits\TerminateTrait;
 use Archman\Whisper\Traits\TimerTrait;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
@@ -17,6 +18,7 @@ abstract class AbstractWorker implements HandlerInterface
     use SignalTrait;
     use TimerTrait;
     use ErrorTrait;
+    use TerminateTrait;
 
     /** @var string */
     private $workerID;
