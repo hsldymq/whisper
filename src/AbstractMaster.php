@@ -19,6 +19,12 @@ use React\EventLoop\LoopInterface;
 use React\EventLoop\TimerInterface;
 use React\Stream\DuplexResourceStream;
 
+/**
+ * 预定义的event:
+ *      workerExit
+ * 要捕捉和使用事件,使用:
+ *      $this->on和$this->emit方法
+ */
 abstract class AbstractMaster extends EventEmitter
 {
     use SignalTrait;
