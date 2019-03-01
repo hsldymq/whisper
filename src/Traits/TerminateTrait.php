@@ -8,6 +8,12 @@ trait TerminateTrait
 
     private $shutdownCallbacks = [];
 
+    /**
+     * 注册一个shutdown function.
+     *
+     * @param callable $callback
+     * @param mixed ...$params
+     */
     public function registerShutdown(callable $callback, ...$params)
     {
         if (!$this->registered) {
@@ -26,6 +32,11 @@ trait TerminateTrait
         ];
     }
 
+    /**
+     * 注销指定shutdown function.
+     *
+     * @param callable $callback
+     */
     public function unregisterShutdown(callable $callback)
     {
         foreach ($this->shutdownCallbacks as $idx => $each) {
@@ -36,6 +47,9 @@ trait TerminateTrait
         }
     }
 
+    /**
+     * 注销所有shutdown function.
+     */
     public function unregisterAllShutdown()
     {
         foreach ($this->shutdownCallbacks as $idx => $each) {
