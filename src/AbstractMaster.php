@@ -129,6 +129,9 @@ abstract class AbstractMaster extends EventEmitter
         }
     }
 
+    /**
+     * @return bool
+     */
     public function daemonize(): bool
     {
         $pid = pcntl_fork();
@@ -191,21 +194,37 @@ abstract class AbstractMaster extends EventEmitter
         return $this->workers[$workerID]['communicator'] ?? null;
     }
 
+    /**
+     * @return LoopInterface
+     */
     protected function getEventLoop(): LoopInterface
     {
         return $this->eventLoop;
     }
 
+    /**
+     * @return bool
+     */
     protected function countWorkers(): int
     {
         return count($this->workers);
     }
 
+    /**
+     * @param string $workerID
+     * 
+     * @return bool
+     */
     protected function isWorkerExists(string $workerID): bool
     {
         return isset($this->workers[$workerID]);
     }
 
+    /**
+     * @param string $workerID
+     * 
+     * @return bool
+     */
     protected function isWorkerDisconnected(string $workerID): bool
     {
         $c = $this->getCommunicator($workerID);
@@ -217,6 +236,9 @@ abstract class AbstractMaster extends EventEmitter
         return true;
     }
 
+    /**
+     * 移除保存的worker信息.
+     */
     protected function removeWorker(string $workerID)
     {
         $pid = $this->workers[$workerID]['pid'] ?? null;
@@ -226,6 +248,15 @@ abstract class AbstractMaster extends EventEmitter
         unset($this->workers[$workerID]);
     }
 
+    /**
+     * 通过worker id向worker进程发送信号.
+     * 
+     * @param string $workerID
+     * @param int $signal
+     * @param bool $remove 是否同时移除worker信息
+     * 
+     * @return bool
+     */
     protected function killWorker(string $workerID, int $signal, bool $remove = true): bool
     {
         $pid = $this->getWorkerPID($workerID);
@@ -242,8 +273,10 @@ abstract class AbstractMaster extends EventEmitter
 
     /**
      * 将消息写入缓冲区.
+     * 
      * @param string $workerID
      * @param Message $msg
+     * 
      * @return bool
      */
     final protected function sendMessage(string $workerID, Message $msg): bool
@@ -266,6 +299,7 @@ abstract class AbstractMaster extends EventEmitter
 
     /**
      * @param WorkerFactoryInterface $factory
+     * 
      * @return string|null
      */
     final protected function createWorker(WorkerFactoryInterface $factory)
