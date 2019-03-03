@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Archman\Whisper\Traits;
 
 use Archman\Whisper\Interfaces\ErrorHandlerInterface;
