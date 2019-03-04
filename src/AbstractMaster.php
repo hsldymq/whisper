@@ -218,7 +218,7 @@ abstract class AbstractMaster extends EventEmitter
     final protected function sendMessage(string $workerID, Message $msg): bool
     {
         if (!$this->isWorkerExists($workerID)) {
-            $this->raiseError(new WorkerNotExistException());
+            $this->raiseError(new WorkerNotExistException($workerID));
             return false;
         }
 
