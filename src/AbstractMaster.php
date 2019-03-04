@@ -23,7 +23,7 @@ use React\Stream\DuplexResourceStream;
 
 /**
  * 预定义的event:
- *      workerExit
+ *      workerExit, 接受参数:$workerID, $pid
  * 要捕捉和使用事件,使用:
  *      $this->on和$this->emit方法
  */
@@ -318,8 +318,9 @@ abstract class AbstractMaster extends EventEmitter
             $onClose = (function (string $workerID) {
                 return function () use ($workerID) {
                     if ($this->isWorkerExists($workerID)) {
+                        $pid = $this->getWorkerPID($workerID);
                         $this->removeWorker($workerID);
-                        $this->emit("workerExit", [$workerID]);
+                        $this->emit("workerExit", [$workerID, $pid]);
                     }
                 };
             })($workerID);
