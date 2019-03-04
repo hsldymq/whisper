@@ -318,9 +318,8 @@ abstract class AbstractMaster extends EventEmitter
             $onClose = (function (string $workerID) {
                 return function () use ($workerID) {
                     if ($this->isWorkerExists($workerID)) {
-                        $pid = $this->getWorkerPID($workerID);
+                        $this->emit("workerExit", [$workerID]);
                         $this->removeWorker($workerID);
-                        $this->emit("workerExit", [$workerID, $pid]);
                     }
                 };
             })($workerID);
