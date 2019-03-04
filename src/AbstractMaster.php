@@ -238,14 +238,22 @@ abstract class AbstractMaster extends EventEmitter
 
     /**
      * 移除保存的worker信息.
+     *
+     * @param string $workerID
+     *
+     * @return bool
      */
-    protected function removeWorker(string $workerID)
+    protected function removeWorker(string $workerID): bool
     {
-        $pid = $this->workers[$workerID]['pid'] ?? null;
-        if ($pid) {
-            unset($this->idMaps[$pid]);
+        $pid = $this->getWorkerPID($workerID);
+        if (!$pid) {
+            return false;
         }
+
+        unset($this->idMaps[$this->workers[$workerID]['pid']]);
         unset($this->workers[$workerID]);
+
+        return true;
     }
 
     /**
