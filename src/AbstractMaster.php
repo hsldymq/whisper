@@ -271,6 +271,11 @@ abstract class AbstractMaster extends EventEmitter
         return true;
     }
 
+    protected function makeWorkerID(): string
+    {
+        return Helper::uuid();
+    }
+
     /**
      * 将消息写入缓冲区.
      * 
@@ -311,7 +316,7 @@ abstract class AbstractMaster extends EventEmitter
             return null;
         }
 
-        $workerID = Helper::uuid();
+        $workerID = $this->makeWorkerID();
         $pid = pcntl_fork();
         if ($pid > 0) {
             // parent
