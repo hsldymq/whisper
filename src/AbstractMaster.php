@@ -46,16 +46,6 @@ abstract class AbstractMaster extends EventEmitter
      */
     private $workers = [];
 
-    /**
-     * @var array pid到worker id的映射
-     *  [
-     *      $pid1 => $worderID1,
-     *      $pid2 => $worderID2,
-     *      ...
-     *  ]
-     */
-    private $idMaps = [];
-
     /** @var LoopInterface */
     private $eventLoop;
 
@@ -157,16 +147,6 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
-     * @param int $pid
-     * 
-     * @return string|null
-     */
-    public function getWorkerID(int $pid)
-    {
-        return $this->idMaps[$pid] ?? null;
-    }
-
-    /**
      * @return array
      */
     public function getWorkerIDs(): array
@@ -245,12 +225,9 @@ abstract class AbstractMaster extends EventEmitter
      */
     protected function removeWorker(string $workerID): bool
     {
-        $pid = $this->getWorkerPID($workerID);
-        if (!$pid) {
+        if (!isset($this->workers[$workerID])) {
             return false;
         }
-
-        unset($this->idMaps[$this->workers[$workerID]['pid']]);
         unset($this->workers[$workerID]);
 
         return true;
@@ -334,7 +311,6 @@ abstract class AbstractMaster extends EventEmitter
             $stream = new DuplexResourceStream($socketPair[0], $this->eventLoop);
             $communicator = new Communicator($stream, $this->newHandler($workerID));
 
-            $this->idMaps[$pid] = $workerID;
             $this->workers[$workerID] = [
                 'pid' => $pid,
                 'communicator' => $communicator,
