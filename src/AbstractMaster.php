@@ -203,7 +203,7 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
-     * @return bool
+     * @return int
      */
     protected function countWorkers(): int
     {
