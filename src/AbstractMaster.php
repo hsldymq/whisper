@@ -288,11 +288,14 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
+     * Fork a new worker.
+     *
      * @param WorkerFactoryInterface $factory
+     * @param callable $afterCreated 当worker被创建,被执行于worker进程中,你可以用它清理从父进程fork过来的无用数据或者做其他操作.
      * 
      * @return string|null
      */
-    final protected function createWorker(WorkerFactoryInterface $factory)
+    final protected function createWorker(WorkerFactoryInterface $factory, callable $afterCreated = null)
     {
         $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
@@ -337,6 +340,9 @@ abstract class AbstractMaster extends EventEmitter
             $this->removeAllSignalHandlers();
             $this->removeAllTimers();
             $this->unregisterAllShutdown();
+            if (is_callable($afterCreated)) {
+                $afterCreated();
+            }
             unset($socketPair[0], $this->eventLoop, $this->workers);
 
             $worker = $factory->makeWorker($workerID, $socketPair[1]);
