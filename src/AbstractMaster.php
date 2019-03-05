@@ -8,10 +8,8 @@ use Archman\Whisper\Exception\CreateSocketException;
 use Archman\Whisper\Exception\ForkException;
 use Archman\Whisper\Exception\UnwritableSocketException;
 use Archman\Whisper\Exception\WorkerNotExistException;
-use Archman\Whisper\Interfaces\ErrorHandlerInterface;
-use Archman\Whisper\Interfaces\HandlerInterface;
+use Archman\Whisper\Interfaces\MessageHandler;
 use Archman\Whisper\Interfaces\WorkerFactoryInterface;
-use Archman\Whisper\Traits\ErrorTrait;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TerminateTrait;
 use Archman\Whisper\Traits\TimerTrait;
@@ -31,7 +29,6 @@ abstract class AbstractMaster extends EventEmitter
 {
     use SignalTrait;
     use TimerTrait;
-    use ErrorTrait;
     use TerminateTrait;
 
     /**
@@ -120,17 +117,15 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
-     * @return bool
      * @throws
      */
-    public function daemonize(): bool
+    public function daemonize()
     {
         $pid = pcntl_fork();
         if ($pid > 0) {
             exit(0);
         } else if ($pid < 0) {
-            $this->raiseError(new ForkException("", ForkException::DAEMONIZING));
-            return false;
+            throw new ForkException("daemonize failed", ForkException::DAEMONIZING);
         }
 
         posix_setsid();
@@ -139,12 +134,9 @@ abstract class AbstractMaster extends EventEmitter
         if ($pid > 0) {
             exit(0);
         } else if ($pid < 0) {
-            $this->raiseError(new ForkException("", ForkException::DAEMONIZING));
-            return false;
+            throw new ForkException("daemonize failed", ForkException::DAEMONIZING);
         }
         umask(0);
-
-        return true;
     }
 
     /**
@@ -279,14 +271,12 @@ abstract class AbstractMaster extends EventEmitter
     final protected function sendMessage(string $workerID, Message $msg): bool
     {
         if (!$this->workerExists($workerID)) {
-            $this->raiseError(new WorkerNotExistException($workerID));
-            return false;
+            throw new WorkerNotExistException($workerID);
         }
 
         $communicator = $this->getCommunicator($workerID);
         if (!$communicator->isWritable()) {
-            $this->raiseError(new UnwritableSocketException());
-            return false;
+            throw new UnwritableSocketException();
         }
 
         $this->emit('onSendingMessage', [$msg]);
@@ -308,8 +298,7 @@ abstract class AbstractMaster extends EventEmitter
         $socketPair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
 
         if ($socketPair === false) {
-            $this->raiseError(new CreateSocketException());
-            return null;
+            throw new CreateSocketException();
         }
 
         $workerID = $this->makeWorkerID();
@@ -339,8 +328,7 @@ abstract class AbstractMaster extends EventEmitter
             if ($this->isWorkerDisconnected($workerID)) {
                 // 子进程有可能在初始化时出错,这里做一次检测
                 $stream->emit('close');
-                $this->raiseError(new ForkException("", ForkException::CHILD_EXIT));
-                return null;
+                throw new ForkException("worker exit", ForkException::CHILD_EXIT);
             }
         } else if ($pid === 0) {
             // child
@@ -358,16 +346,15 @@ abstract class AbstractMaster extends EventEmitter
             $worker->run();
             exit(0);
         } else {
-            $this->raiseError(new ForkException("", ForkException::CREATING));
-            return null;
+            throw new ForkException("fork failed", ForkException::CREATING);
         }
 
         return $workerID;
     }
 
-    private function newHandler(string $workerID): HandlerInterface
+    private function newHandler(string $workerID): MessageHandler
     {
-        return new class($this, $workerID) implements HandlerInterface {
+        return new class($this, $workerID) implements MessageHandler {
             /** @var AbstractMaster */
             private $master;
 
@@ -388,16 +375,6 @@ abstract class AbstractMaster extends EventEmitter
             public function handleMessage(Message $msg)
             {
                 $this->master->onMessage($this->workerID, $msg);
-            }
-
-            public function handleError(\Throwable $e)
-            {
-                if ($this->master instanceof ErrorHandlerInterface) {
-                    $this->master->onError($e);
-                    return;
-                }
-
-                throw $e;
             }
         };
     }

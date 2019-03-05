@@ -6,8 +6,7 @@ namespace Archman\Whisper;
 
 use Archman\Whisper\Exception\InvalidSocketException;
 use Archman\Whisper\Exception\UnwritableSocketException;
-use Archman\Whisper\Interfaces\HandlerInterface;
-use Archman\Whisper\Traits\ErrorTrait;
+use Archman\Whisper\Interfaces\MessageHandler;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TerminateTrait;
 use Archman\Whisper\Traits\TimerTrait;
@@ -15,11 +14,10 @@ use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
 
-abstract class AbstractWorker implements HandlerInterface
+abstract class AbstractWorker implements MessageHandler
 {
     use SignalTrait;
     use TimerTrait;
-    use ErrorTrait;
     use TerminateTrait;
 
     /** @var string */
@@ -71,16 +69,14 @@ abstract class AbstractWorker implements HandlerInterface
         return $this->eventLoop;
     }
 
-    final public function handleError(\Throwable $e)
-    {
-        $this->raiseError($e);
-    }
-
+    /**
+     * @param Message $msg
+     * @throws
+     */
     final protected function sendMessage(Message $msg)
     {
         if (!$this->communicator->isWritable()) {
-            $this->raiseError(new UnwritableSocketException());
-            return;
+            throw new UnwritableSocketException();
         }
 
         $this->communicator->send($msg);

@@ -7,7 +7,7 @@ namespace Archman\Whisper;
 use Archman\ByteOrder\ByteOrder;
 use Archman\ByteOrder\Operator;
 use Archman\Whisper\Exception\CheckMagicWordException;
-use Archman\Whisper\Interfaces\HandlerInterface;
+use Archman\Whisper\Interfaces\MessageHandler;
 use React\Stream\DuplexResourceStream;
 
 class Communicator
@@ -33,7 +33,7 @@ class Communicator
 
     protected $receivedData = '';
 
-    /** @var HandlerInterface */
+    /** @var MessageHandler */
     private $handler;
 
     /** @var DuplexResourceStream */
@@ -45,7 +45,7 @@ class Communicator
     /** @var array|null 当前消息解析出的头部 */
     private $header = null;
 
-    public function __construct(DuplexResourceStream $stream, HandlerInterface $handler)
+    public function __construct(DuplexResourceStream $stream, MessageHandler $handler)
     {
         $stream->on("data", [$this, "onReceive"]);
         $this->stream = $stream;
@@ -80,12 +80,8 @@ class Communicator
     {
         $this->receivedData .= $data;
 
-        try {
-            while ($message = $this->parseMessages()) {
-                $this->handler->handleMessage($message);
-            }
-        } catch (\Throwable $e) {
-            $this->handler->handleError($e);
+        while ($message = $this->parseMessages()) {
+            $this->handler->handleMessage($message);
         }
     }
 
