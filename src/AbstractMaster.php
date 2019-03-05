@@ -195,7 +195,7 @@ abstract class AbstractMaster extends EventEmitter
      * 
      * @return bool
      */
-    protected function isWorkerExists(string $workerID): bool
+    protected function workerExists(string $workerID): bool
     {
         return isset($this->workers[$workerID]);
     }
@@ -271,7 +271,7 @@ abstract class AbstractMaster extends EventEmitter
      */
     final protected function sendMessage(string $workerID, Message $msg): bool
     {
-        if (!$this->isWorkerExists($workerID)) {
+        if (!$this->workerExists($workerID)) {
             $this->raiseError(new WorkerNotExistException($workerID));
             return false;
         }
@@ -320,7 +320,7 @@ abstract class AbstractMaster extends EventEmitter
             ];
             $onClose = (function (string $workerID) {
                 return function () use ($workerID) {
-                    if ($this->isWorkerExists($workerID)) {
+                    if ($this->workerExists($workerID)) {
                         $this->emit("workerExit", [$workerID]);
                         $this->removeWorker($workerID);
                     }
