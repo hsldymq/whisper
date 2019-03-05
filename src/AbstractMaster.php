@@ -331,6 +331,7 @@ abstract class AbstractMaster extends EventEmitter
             if ($this->isWorkerDisconnected($workerID)) {
                 // 子进程有可能在初始化时出错,这里做一次检测
                 $stream->emit('close');
+                $this->raiseError(new ForkException("", ForkException::CHILD_EXIT));
                 return null;
             }
         } else if ($pid === 0) {
