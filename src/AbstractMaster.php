@@ -121,6 +121,7 @@ abstract class AbstractMaster extends EventEmitter
 
     /**
      * @return bool
+     * @throws
      */
     public function daemonize(): bool
     {
@@ -256,6 +257,11 @@ abstract class AbstractMaster extends EventEmitter
         return true;
     }
 
+    /**
+     * Override this method to provide a new worker id generator.
+     *
+     * @return string
+     */
     protected function makeWorkerID(): string
     {
         return Helper::uuid();
@@ -268,6 +274,7 @@ abstract class AbstractMaster extends EventEmitter
      * @param Message $msg
      * 
      * @return bool
+     * @throws
      */
     final protected function sendMessage(string $workerID, Message $msg): bool
     {
@@ -294,6 +301,7 @@ abstract class AbstractMaster extends EventEmitter
      * @param callable $afterCreated 当worker被创建,被执行于worker进程中,你可以用它清理从父进程fork过来的无用数据或者做其他操作.
      * 
      * @return string|null
+     * @throws
      */
     final protected function createWorker(WorkerFactoryInterface $factory, callable $afterCreated = null)
     {
