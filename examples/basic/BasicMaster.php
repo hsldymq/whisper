@@ -14,17 +14,7 @@ class BasicMaster extends AbstractMaster
         parent::__construct();
 
         $this->on('workerExit', function (string $workerID) {
-            $num = $this->countWorkers();
-            echo "{$workerID} Quit. Number Of Workers: {$num}\n";
-
-            if ($num === 0) {
-                exit(0);
-            }
-        });
-
-        $this->registerShutdown(function () {
-            echo "Shutdown Function Called.\n";
-            echo "Master Quit";
+            echo "{$workerID} Quit.\n";
         });
 
         $this->addSignalHandler(SIGINT, function () {
@@ -36,6 +26,15 @@ class BasicMaster extends AbstractMaster
 
         $this->addSignalHandler(SIGCHLD, function () {
             pcntl_wait($status);
+
+            if ($this->countWorkers() === 0) {
+                exit(0);
+            }
+        });
+
+        $this->registerShutdown(function () {
+            echo "Shutdown Function Called.\n";
+            echo "Master Quit";
         });
     }
 
