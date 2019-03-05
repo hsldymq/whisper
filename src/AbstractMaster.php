@@ -227,7 +227,7 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
-     * 通过worker id向worker进程发送信号.
+     * Send a signal to a worker.
      * 
      * @param string $workerID
      * @param int $signal
@@ -235,7 +235,7 @@ abstract class AbstractMaster extends EventEmitter
      * 
      * @return bool
      */
-    protected function killWorker(string $workerID, int $signal, bool $remove = true): bool
+    protected function killWorker(string $workerID, int $signal, bool $remove): bool
     {
         $pid = $this->getWorkerPID($workerID);
         if (!$pid || !posix_kill($pid, $signal)) {
