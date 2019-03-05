@@ -45,11 +45,6 @@ class Communicator
     /** @var array|null 当前消息解析出的头部 */
     private $header = null;
 
-    /**
-     * Communicator constructor.
-     * @param DuplexResourceStream $stream
-     * @param HandlerInterface $handler
-     */
     public function __construct(DuplexResourceStream $stream, HandlerInterface $handler)
     {
         $stream->on("data", [$this, "onReceive"]);
@@ -65,11 +60,22 @@ class Communicator
         unset($this->handler);
     }
 
+    /**
+     * @param Message $msg
+     *
+     * @return bool
+     */
     public function send(Message $msg): bool
     {
         return $this->stream->write(self::serialize($msg));
     }
 
+    /**
+     * @param string $data
+     *
+     * @return void
+     * @throws
+     */
     public function onReceive(string $data)
     {
         $this->receivedData .= $data;
@@ -83,24 +89,31 @@ class Communicator
         }
     }
 
+    /**
+     * @return bool
+     */
     public function isReadable(): bool
     {
         return $this->stream->isReadable();
     }
 
+    /**
+     * @return bool
+     */
     public function isWritable(): bool
     {
         return $this->stream->isWritable();
     }
 
+    /**
+     * @return int
+     */
     public function getReadStatus(): int
     {
         return $this->readStatus;
     }
 
     /**
-     *
-     *
      * @param Message $msg
      *
      * @return string
@@ -121,6 +134,7 @@ class Communicator
 
     /**
      * @param string $header
+     *
      * @return array
      * @throws CheckMagicWordException
      */
