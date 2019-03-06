@@ -87,13 +87,31 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
+     * @return array
+     */
+    public function getWorkerIDs(): array
+    {
+        return array_keys($this->workers);
+    }
+
+    /**
+     * @param string $workerID
+     * 
+     * @return int|null
+     */
+    protected function getWorkerPID(string $workerID)
+    {
+        return $this->workers[$workerID]['pid'] ?? null;
+    }
+
+    /**
      * 开始阻塞处理消息传输和处理,直至指定时间返回.
      *
      * @param float $interval 阻塞时间(秒). 不传代表永久阻塞.
      * @example $master->run(0.1);  // 阻塞100毫秒后返回.
      * @example $master->run(2);    // 阻塞2秒后返回.
      */
-    public function process(float $interval = null)
+    protected function process(float $interval = null)
     {
         if ($interval !== null) {
             $this->processTimer = $this->eventLoop->addTimer($interval, function () {
@@ -107,7 +125,7 @@ abstract class AbstractMaster extends EventEmitter
     /**
      * 停止阻塞处理.
      */
-    public function stopProcess()
+    protected function stopProcess()
     {
         $this->eventLoop->stop();
         if ($this->processTimer) {
@@ -119,7 +137,7 @@ abstract class AbstractMaster extends EventEmitter
     /**
      * @throws
      */
-    public function daemonize()
+    protected function daemonize()
     {
         $pid = pcntl_fork();
         if ($pid > 0) {
@@ -137,24 +155,6 @@ abstract class AbstractMaster extends EventEmitter
             throw new ForkException("daemonize failed", ForkException::DAEMONIZING);
         }
         umask(0);
-    }
-
-    /**
-     * @return array
-     */
-    public function getWorkerIDs(): array
-    {
-        return array_keys($this->workers);
-    }
-
-    /**
-     * @param string $workerID
-     * 
-     * @return int|null
-     */
-    protected function getWorkerPID(string $workerID)
-    {
-        return $this->workers[$workerID]['pid'] ?? null;
     }
 
     /**
