@@ -10,11 +10,12 @@ use Archman\Whisper\Interfaces\MessageHandler;
 use Archman\Whisper\Traits\SignalTrait;
 use Archman\Whisper\Traits\TerminateTrait;
 use Archman\Whisper\Traits\TimerTrait;
+use Evenement\EventEmitter;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
 
-abstract class AbstractWorker implements MessageHandler
+abstract class AbstractWorker extends EventEmitter implements MessageHandler
 {
     use SignalTrait;
     use TimerTrait;
@@ -54,6 +55,9 @@ abstract class AbstractWorker implements MessageHandler
         unset($this->eventLoop);
     }
 
+    /**
+     * 默认阻塞等待消息到来, 覆盖此方法提供不同的逻辑.
+     */
     public function run()
     {
         $this->eventLoop->run();
