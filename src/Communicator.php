@@ -138,6 +138,7 @@ class Communicator
     {
         $magicWordLength = strlen(self::MAGIC_WORD);
         $magicWord = substr($header, 0, $magicWordLength);
+        // TODO 这里做一个尝试,从找到有magic word的地方恢复
         if ($magicWord !== self::MAGIC_WORD) {
             throw new CheckMagicWordException();
         }
