@@ -105,6 +105,14 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
+     * @return int
+     */
+    public function countWorkers(): int
+    {
+        return count($this->workers);
+    }
+
+    /**
      * 开始阻塞处理消息传输和处理,直至指定时间返回.
      *
      * @param float $interval 阻塞时间(秒). 不传代表永久阻塞.
@@ -173,14 +181,6 @@ abstract class AbstractMaster extends EventEmitter
     protected function getEventLoop(): LoopInterface
     {
         return $this->eventLoop;
-    }
-
-    /**
-     * @return int
-     */
-    protected function countWorkers(): int
-    {
-        return count($this->workers);
     }
 
     /**
