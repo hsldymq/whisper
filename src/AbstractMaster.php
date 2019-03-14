@@ -21,9 +21,9 @@ use React\Stream\DuplexResourceStream;
 
 /**
  * 预定义的event:
- *      __workerExit,       参数: string $workerID, int $pid
- *      __sendingMessage    参数: Message $message
- *      __close             参数: string $workerID, int $pid
+ * @event __workerExit,         参数: string $workerID, int $pid
+ * @event __sendingMessage      参数: Message $message
+ * @event __close               参数: string $workerID, int $pid
  *
  * 要捕捉和发布事件,使用:
  *      $this->on和$this->emit方法
