@@ -21,9 +21,9 @@ use React\Stream\DuplexResourceStream;
 
 /**
  * 预定义的event:
- *      workerExit,         参数: string $workerID, int $pid
- *      sendingMessage      参数: Message $message
- *      close               参数: string $workerID, int $pid
+ *      __workerExit,       参数: string $workerID, int $pid
+ *      __sendingMessage    参数: Message $message
+ *      __close             参数: string $workerID, int $pid
  *
  * 要捕捉和发布事件,使用:
  *      $this->on和$this->emit方法
@@ -104,7 +104,7 @@ abstract class AbstractMaster extends EventEmitter
                 $workerID = $this->workerIDs[$pid] ?? null;
                 if ($workerID !== null) {
                     $this->removeWorker($workerID);
-                    $this->emit('workerExit', [$workerID, $pid]);
+                    $this->emit('__workerExit', [$workerID, $pid]);
                 }
             }
         });
@@ -305,7 +305,7 @@ abstract class AbstractMaster extends EventEmitter
             throw new UnwritableSocketException();
         }
 
-        $this->emit('sendingMessage', [$msg]);
+        $this->emit('__sendingMessage', [$msg]);
 
         return $communicator->send($msg);
     }
@@ -348,7 +348,7 @@ abstract class AbstractMaster extends EventEmitter
                     $pid = $this->workers[$workerID]['pid'] ?? null;
                     if ($pid !== null) {
                         $this->removeWorker($workerID);
-                        $this->emit("workerExit", [$workerID, $pid]);
+                        $this->emit("__workerExit", [$workerID, $pid]);
                     }
                 };
             })($workerID);
@@ -356,7 +356,7 @@ abstract class AbstractMaster extends EventEmitter
 
             if ($this->isWorkerDisconnected($workerID)) {
                 // 子进程有可能在初始化时出错,这里做一次检测
-                $stream->emit('close', [$workerID, $pid]);
+                $stream->emit('__close', [$workerID, $pid]);
                 throw new ForkException("worker exit", ForkException::CHILD_EXIT);
             }
         } else if ($pid === 0) {
