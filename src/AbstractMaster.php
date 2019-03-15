@@ -256,19 +256,14 @@ abstract class AbstractMaster extends EventEmitter
      * 
      * @param string $workerID
      * @param int $signal
-     * @param bool $remove 是否同时移除worker信息
      * 
      * @return bool
      */
-    protected function killWorker(string $workerID, int $signal, bool $remove): bool
+    protected function killWorker(string $workerID, int $signal): bool
     {
         $pid = $this->getWorkerPID($workerID);
         if (!$pid || !posix_kill($pid, $signal)) {
             return false;
-        }
-
-        if ($remove) {
-            $this->removeWorker($workerID);
         }
 
         return true;
