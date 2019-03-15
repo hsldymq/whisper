@@ -118,16 +118,6 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
-     * @param string $workerID
-     * 
-     * @return int|null
-     */
-    protected function getWorkerPID(string $workerID)
-    {
-        return $this->workers[$workerID]['pid'] ?? null;
-    }
-
-    /**
      * @return int
      */
     public function countWorkers(): int
@@ -186,6 +176,16 @@ abstract class AbstractMaster extends EventEmitter
             throw new ForkException("daemonize failed", ForkException::DAEMONIZING);
         }
         umask(0);
+    }
+
+    /**
+     * @param string $workerID
+     *
+     * @return int|null
+     */
+    protected function getWorkerPID(string $workerID)
+    {
+        return $this->workers[$workerID]['pid'] ?? null;
     }
 
     /**
