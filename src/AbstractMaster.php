@@ -239,7 +239,7 @@ abstract class AbstractMaster extends EventEmitter
      *
      * @return bool
      */
-    protected function removeWorker(string $workerID): bool
+    final protected function removeWorker(string $workerID): bool
     {
         if (!isset($this->workers[$workerID])) {
             return false;
@@ -259,7 +259,7 @@ abstract class AbstractMaster extends EventEmitter
      * 
      * @return bool
      */
-    protected function killWorker(string $workerID, int $signal): bool
+    final protected function killWorker(string $workerID, int $signal): bool
     {
         $pid = $this->getWorkerPID($workerID);
         if (!$pid || !posix_kill($pid, $signal)) {
