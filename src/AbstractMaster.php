@@ -21,8 +21,10 @@ use React\Stream\DuplexResourceStream;
 
 /**
  * 预定义的event:
- *      workerExit, 接受参数:$workerID, $pid
- * 要捕捉和使用事件,使用:
+ * @event __workerExit,         参数: string $workerID, int $pid
+ * @event __sendingMessage      参数: Message $message
+ *
+ * 要捕捉和发布事件,使用:
  *      $this->on和$this->emit方法
  */
 abstract class AbstractMaster extends EventEmitter
@@ -42,6 +44,15 @@ abstract class AbstractMaster extends EventEmitter
      *  ]
      */
     private $workers = [];
+
+    /**
+     * @var array
+     * [
+     *      $pid => $workerID,
+     *      ...
+     * ]
+     */
+    private $workerIDs = [];
 
     /** @var LoopInterface */
     private $eventLoop;
@@ -84,6 +95,18 @@ abstract class AbstractMaster extends EventEmitter
     public function __construct()
     {
         $this->eventLoop = Factory::create();
+
+        $this->addSignalHandler(SIGCHLD, function () {
+            $pid = pcntl_wait($status, WNOHANG);
+            if ($pid > 0) {
+                /** @var string|null $workerID */
+                $workerID = $this->workerIDs[$pid] ?? null;
+                if ($workerID !== null) {
+                    $this->removeWorker($workerID);
+                    $this->emit('__workerExit', [$workerID, $pid]);
+                }
+            }
+        });
     }
 
     /**
@@ -92,16 +115,6 @@ abstract class AbstractMaster extends EventEmitter
     public function getWorkerIDs(): array
     {
         return array_keys($this->workers);
-    }
-
-    /**
-     * @param string $workerID
-     * 
-     * @return int|null
-     */
-    protected function getWorkerPID(string $workerID)
-    {
-        return $this->workers[$workerID]['pid'] ?? null;
     }
 
     /**
@@ -167,6 +180,16 @@ abstract class AbstractMaster extends EventEmitter
 
     /**
      * @param string $workerID
+     *
+     * @return int|null
+     */
+    protected function getWorkerPID(string $workerID)
+    {
+        return $this->workers[$workerID]['pid'] ?? null;
+    }
+
+    /**
+     * @param string $workerID
      * 
      * @return Communicator|null
      */
@@ -216,11 +239,13 @@ abstract class AbstractMaster extends EventEmitter
      *
      * @return bool
      */
-    protected function removeWorker(string $workerID): bool
+    final protected function removeWorker(string $workerID): bool
     {
         if (!isset($this->workers[$workerID])) {
             return false;
         }
+        $pid = $this->workers[$workerID]['pid'];
+        unset($this->workerIDs[$pid]);
         unset($this->workers[$workerID]);
 
         return true;
@@ -231,19 +256,14 @@ abstract class AbstractMaster extends EventEmitter
      * 
      * @param string $workerID
      * @param int $signal
-     * @param bool $remove 是否同时移除worker信息
      * 
      * @return bool
      */
-    protected function killWorker(string $workerID, int $signal, bool $remove): bool
+    final protected function killWorker(string $workerID, int $signal): bool
     {
         $pid = $this->getWorkerPID($workerID);
         if (!$pid || !posix_kill($pid, $signal)) {
             return false;
-        }
-
-        if ($remove) {
-            $this->removeWorker($workerID);
         }
 
         return true;
@@ -279,7 +299,7 @@ abstract class AbstractMaster extends EventEmitter
             throw new UnwritableSocketException();
         }
 
-        $this->emit('onSendingMessage', [$msg]);
+        $this->emit('__sendingMessage', [$msg]);
 
         return $communicator->send($msg);
     }
@@ -311,15 +331,18 @@ abstract class AbstractMaster extends EventEmitter
             $stream = new DuplexResourceStream($socketPair[0], $this->eventLoop);
             $communicator = new Communicator($stream, $this->newHandler($workerID));
 
+            $this->workerIDs[$pid] = $workerID;
             $this->workers[$workerID] = [
                 'pid' => $pid,
                 'communicator' => $communicator,
             ];
+
             $onClose = (function (string $workerID) {
                 return function () use ($workerID) {
-                    if ($this->workerExists($workerID)) {
-                        $this->emit("workerExit", [$workerID]);
+                    $pid = $this->workers[$workerID]['pid'] ?? null;
+                    if ($pid !== null) {
                         $this->removeWorker($workerID);
+                        $this->emit("__workerExit", [$workerID, $pid]);
                     }
                 };
             })($workerID);
