@@ -13,6 +13,7 @@ use Archman\Whisper\Traits\TimerTrait;
 use Evenement\EventEmitter;
 use React\EventLoop\Factory;
 use React\EventLoop\LoopInterface;
+use React\EventLoop\TimerInterface;
 use React\Stream\DuplexResourceStream;
 
 abstract class AbstractWorker extends EventEmitter implements MessageHandler
@@ -29,6 +30,9 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
 
     /** @var LoopInterface */
     private $eventLoop;
+
+    /** @var TimerInterface */
+    private $processTimer = null;
 
     /**
      * 子类重载构造函数要确保基类构造函数被调用.
@@ -60,7 +64,7 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
      */
     public function run()
     {
-        $this->eventLoop->run();
+        $this->process();
     }
 
     public function getWorkerID(): string
@@ -68,6 +72,39 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
         return $this->workerID;
     }
 
+    /**
+     * 开始阻塞处理消息传输和处理,直至指定时间返回.
+     *
+     * @param float $interval 阻塞时间(秒). 不传代表永久阻塞.
+     * @example $master->run(0.1);  // 阻塞100毫秒后返回.
+     * @example $master->run(2);    // 阻塞2秒后返回.
+     */
+    protected function process(float $interval = null)
+    {
+        if ($interval !== null) {
+            $this->processTimer = $this->eventLoop->addTimer($interval, function () {
+                $this->eventLoop->stop();
+                $this->processTimer = null;
+            });
+        }
+        $this->eventLoop->run();
+    }
+
+    /**
+     * 停止阻塞处理.
+     */
+    protected function stopProcess()
+    {
+        $this->eventLoop->stop();
+        if ($this->processTimer) {
+            $this->eventLoop->cancelTimer($this->processTimer);
+            $this->processTimer = null;
+        }
+    }
+
+    /**
+     * @return LoopInterface
+     */
     protected function getEventLoop(): LoopInterface
     {
         return $this->eventLoop;
