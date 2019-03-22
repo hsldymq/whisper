@@ -111,6 +111,14 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
     }
 
     /**
+     * @return Communicator
+     */
+    protected function getCommunicator(): Communicator
+    {
+        return $this->communicator;
+    }
+
+    /**
      * @param Message $msg
      * @throws
      */
