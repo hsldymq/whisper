@@ -149,6 +149,14 @@ abstract class AbstractMaster extends EventEmitter
     protected function stopProcess()
     {
         $this->eventLoop->stop();
+        $this->removeProcessTimer();
+    }
+
+    /**
+     * 移除事件循环的计时器.
+     */
+    protected function removeProcessTimer()
+    {
         if ($this->processTimer) {
             $this->eventLoop->cancelTimer($this->processTimer);
             $this->processTimer = null;
