@@ -140,7 +140,14 @@ abstract class AbstractMaster extends EventEmitter
                 $this->processTimer = null;
             });
         }
-        $this->eventLoop->run();
+
+        try {
+            $this->eventLoop->run();
+        } catch (\Throwable $e) {
+            $this->removeProcessTimer();
+            throw $e;
+        }
+        
     }
 
     /**
