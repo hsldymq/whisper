@@ -15,6 +15,7 @@ class BasicWorker extends AbstractWorker
     public function handleMessage(Message $msg)
     {
         if ($msg->getType() === 10) {
+            echo "Received A Quit Message From Master\n";
             exit(0);
         }
 

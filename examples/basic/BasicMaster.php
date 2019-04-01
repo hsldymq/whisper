@@ -13,12 +13,12 @@ class BasicMaster extends AbstractMaster
     {
         parent::__construct();
 
-        $this->on('workerExit', function (string $workerID) {
+        $this->on('__workerExit', function (string $workerID) {
             echo "{$workerID} Quit.\n";
 
             if ($this->countWorkers() === 0) {
                 echo "Master Quit\n";
-                exit(0);
+                $this->stopProcess();
             }
         });
 
