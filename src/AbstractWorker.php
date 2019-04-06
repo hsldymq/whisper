@@ -75,7 +75,7 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
     /**
      * 开始阻塞处理消息传输和处理,直至指定时间返回.
      *
-     * @param float $interval 阻塞时间(秒). 不传代表永久阻塞.
+     * @param float|int|null $interval 阻塞时间(秒). 不传代表永久阻塞.
      * @example $master->run(0.1);  // 阻塞100毫秒后返回.
      * @example $master->run(2);    // 阻塞2秒后返回.
      */
