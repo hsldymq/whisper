@@ -377,8 +377,11 @@ abstract class AbstractMaster extends EventEmitter
             unset($socketPair[0], $this->eventLoop, $this->workers);
 
             $worker = $factory->makeWorker($workerID, $socketPair[1]);
-            $worker->run();
-            exit(0);
+            try {
+                $worker->run();
+            } finally {
+                exit(0);
+            }
         } else {
             throw new ForkException("fork failed", ForkException::CREATING);
         }
