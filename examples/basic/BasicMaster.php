@@ -7,7 +7,7 @@ use Archman\Whisper\AbstractMaster;
 
 class BasicMaster extends AbstractMaster
 {
-    private $childNum = 3;
+    private $childNum = 10;
 
     public function __construct()
     {

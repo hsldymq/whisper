@@ -21,7 +21,7 @@ class BasicWorker extends AbstractWorker
 
         echo "Received A Message From Master, Type:{$msg->getType()}, Content:{$msg->getContent()}\n";
 
-        sleep(1);
+        usleep(500000);
 
         $this->sendMessage(new Message(1, "This Message Was Sent By Worker {$this->getWorkerID()}."));
     }
