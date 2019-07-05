@@ -54,8 +54,7 @@ class Communicator
 
     public function __destruct()
     {
-        $this->stream->end();
-        $this->stream->close();
+        $this->disconnect();
         unset($this->stream);
         unset($this->handler);
     }
@@ -107,6 +106,12 @@ class Communicator
     public function getReadStatus(): int
     {
         return $this->readStatus;
+    }
+
+    public function disconnect()
+    {
+        $this->stream->end();
+        $this->stream->close();
     }
 
     /**
