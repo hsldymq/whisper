@@ -366,22 +366,25 @@ abstract class AbstractMaster extends EventEmitter
             $stream->on("close", $onClose);
         } else if ($pid === 0) {
             // child
-            fclose($socketPair[0]);
             $this->removeAllListeners();
             $this->removeAllSignalHandlers();
             $this->removeAllTimers();
             $this->unregisterAllShutdown();
-            if (is_callable($afterCreated)) {
-                $afterCreated();
+            foreach ($this->workers as $each) {
+                $c = $each['communicator'] ?? null;
+                $c && $c->disconnect();
             }
+            fclose($socketPair[0]);
             unset($socketPair[0], $this->eventLoop, $this->workers);
 
+            is_callable($afterCreated) && $afterCreated();
             $worker = $factory->makeWorker($workerID, $socketPair[1]);
             try {
                 $worker->run();
-            } finally {
-                exit(0);
+            } catch (\Throwable $e) {
+                exit(-1);
             }
+            exit(0);
         } else {
             throw new ForkException("fork failed", ForkException::CREATING);
         }
