@@ -11,6 +11,15 @@ use React\EventLoop\LoopInterface;
  */
 trait SignalTrait
 {
+    /**
+     * @var array [
+     *      [
+     *          'original' => (callable)
+     *          'wrapped' => (callable)
+     *      ],
+     *      ...
+     * ]
+     */
     private $signalHandlers = [];
 
     /**
@@ -21,9 +30,18 @@ trait SignalTrait
      */
     public function addSignalHandler(int $sig, callable $handler)
     {
-        $this->getEventLoop()->addSignal($sig, $handler);
+        $wrapped = (function (callable $handler) {
+            return function (int $signal) use ($handler) {
+                $handler($signal, $this);
+            };
+        })($handler);
 
-        $this->signalHandlers[$sig][] = $handler;
+        $this->getEventLoop()->addSignal($sig, $wrapped);
+
+        $this->signalHandlers[$sig][] = [
+            'original' => $handler,
+            'wrapped' => $wrapped,
+        ];
     }
 
     /**
@@ -35,8 +53,8 @@ trait SignalTrait
     public function removeSignalHandler(int $sig, callable $handler = null)
     {
         foreach (($this->signalHandlers[$sig] ?? []) as $idx => $h) {
-            if ($handler === null || $handler === $h) {
-                $this->getEventLoop()->removeSignal($sig, $h);
+            if ($handler === null || $handler === $h['original']) {
+                $this->getEventLoop()->removeSignal($sig, $h['wrapped']);
                 unset($this->signalHandlers[$sig][$idx]);
             }
         }
@@ -45,8 +63,8 @@ trait SignalTrait
     public function removeAllSignalHandlers()
     {
         foreach ($this->signalHandlers as $sig => $handlers) {
-            foreach ($handlers as $idx => $eachHandler) {
-                $this->getEventLoop()->removeSignal($sig, $eachHandler);
+            foreach ($handlers as $idx => $h) {
+                $this->getEventLoop()->removeSignal($sig, $h['wrapped']);
                 unset($this->signalHandlers[$sig][$idx]);
             }
         }
