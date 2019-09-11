@@ -2,13 +2,13 @@
     "name": "hsldymq/whisper",
     "require": {
         "php": ">=7.0.0",
-        "hsldymq/byte-order-op": "^0.1.0",
-        "react/event-loop": "^1.0",
-        "react/stream": "^1.0",
-        "evenement/evenement": "^3.0"
+        "hsldymq/byte-order-op": "~0.1.0",
+        "react/event-loop": "~1.0",
+        "react/stream": "~1.0",
+        "evenement/evenement": "~3.0.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.4"
+        "phpunit/phpunit": "~6.4"
     },
     "autoload": {
         "psr-4": {
