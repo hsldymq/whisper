@@ -27,8 +27,10 @@ trait SignalTrait
      *
      * @param int $sig
      * @param callable $handler
+     *
+     * @return self
      */
-    public function addSignalHandler(int $sig, callable $handler)
+    public function addSignalHandler(int $sig, callable $handler): self
     {
         $wrapped = (function (callable $handler) {
             return function (int $signal) use ($handler) {
@@ -42,6 +44,8 @@ trait SignalTrait
             'original' => $handler,
             'wrapped' => $wrapped,
         ];
+
+        return $this;
     }
 
     /**

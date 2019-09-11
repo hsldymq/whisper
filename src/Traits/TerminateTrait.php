@@ -15,8 +15,10 @@ trait TerminateTrait
      *
      * @param callable $callback
      * @param mixed ...$params
+     *
+     * @return self
      */
-    public function registerShutdown(callable $callback, ...$params)
+    public function registerShutdown(callable $callback, ...$params): self
     {
         if (!$this->registered) {
             register_shutdown_function(function () {
@@ -32,6 +34,8 @@ trait TerminateTrait
             'callback' => $callback,
             'params' => $params,
         ];
+
+        return $this;
     }
 
     /**
