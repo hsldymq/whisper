@@ -1,5 +1,6 @@
 {
     "name": "hsldymq/whisper",
+    "license": "MIT",
     "require": {
         "php": ">=7.0.0",
         "hsldymq/byte-order-op": "~0.1.0",
