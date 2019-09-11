@@ -20,16 +20,12 @@ class BasicMaster extends AbstractMaster
                 echo "Master Quit\n";
                 $this->stopProcess();
             }
-        });
-
-        $this->addSignalHandler(SIGINT, function (int $signal, BasicMaster $master) {
+        })->addSignalHandler(SIGINT, function (int $signal, BasicMaster $master) {
             echo "Caught Signal {$signal}, Sending Quit Message To Child.\n";
             foreach ($this->getWorkerIDs() as $id) {
                 $this->sendMessage($id, new Message(10, ''));
             }
-        });
-
-        $this->registerShutdown(function () {
+        })->registerShutdown(function () {
             echo "Shutdown Function Called.\n";
         });
     }
