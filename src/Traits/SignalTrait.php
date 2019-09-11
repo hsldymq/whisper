@@ -35,8 +35,8 @@ trait SignalTrait
     public function removeSignalHandler(int $sig, callable $handler = null)
     {
         foreach (($this->signalHandlers[$sig] ?? []) as $idx => $h) {
-            if ($handler === null || $h === $handler) {
-                $this->getEventLoop()->removeSignal($sig, $handler);
+            if ($handler === null || $handler === $h) {
+                $this->getEventLoop()->removeSignal($sig, $h);
                 unset($this->signalHandlers[$sig][$idx]);
             }
         }
