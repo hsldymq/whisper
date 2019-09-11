@@ -22,8 +22,8 @@ class BasicMaster extends AbstractMaster
             }
         });
 
-        $this->addSignalHandler(SIGINT, function () {
-            echo "Sending Quit Message To Child.\n";
+        $this->addSignalHandler(SIGINT, function (int $signal, BasicMaster $master) {
+            echo "Caught Signal {$signal}, Sending Quit Message To Child.\n";
             foreach ($this->getWorkerIDs() as $id) {
                 $this->sendMessage($id, new Message(10, ''));
             }
