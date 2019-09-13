@@ -2,3 +2,4 @@
 vendor/
 examples/test.php
 composer.lock
+test.php
