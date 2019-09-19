@@ -97,8 +97,7 @@ abstract class AbstractMaster extends EventEmitter
         $this->eventLoop = Factory::create();
 
         $this->addSignalHandler(SIGCHLD, function () {
-            $pid = pcntl_wait($status, WNOHANG);
-            if ($pid > 0) {
+            while (($pid = pcntl_wait($status, WNOHANG)) > 0) {
                 /** @var string|null $workerID */
                 $workerID = $this->workerIDs[$pid] ?? null;
                 if ($workerID !== null) {
