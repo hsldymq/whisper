@@ -1,4 +1,4 @@
-#CHANGELOG
+# CHANGELOG
 
 * 0.3.0 (2019-09-20)
     * AbstractMaster增加WaitChildren方法,提供统一的清除子进程的操作
