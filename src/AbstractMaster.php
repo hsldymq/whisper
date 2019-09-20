@@ -97,14 +97,7 @@ abstract class AbstractMaster extends EventEmitter
         $this->eventLoop = Factory::create();
 
         $this->addSignalHandler(SIGCHLD, function () {
-            while (($pid = pcntl_wait($status, WNOHANG)) > 0) {
-                /** @var string|null $workerID */
-                $workerID = $this->workerIDs[$pid] ?? null;
-                if ($workerID !== null) {
-                    $this->removeWorker($workerID);
-                    $this->emit('__workerExit', [$workerID, $pid]);
-                }
-            }
+            $this->waitChildren();
         });
     }
 
@@ -192,6 +185,21 @@ abstract class AbstractMaster extends EventEmitter
             throw new ForkException("daemonize failed", ForkException::DAEMONIZING);
         }
         umask(0);
+    }
+
+    /**
+     * return void
+     */
+    protected function waitChildren()
+    {
+        while (($pid = pcntl_wait($status, WNOHANG)) > 0) {
+            /** @var string|null $workerID */
+            $workerID = $this->workerIDs[$pid] ?? null;
+            if ($workerID !== null) {
+                $this->removeWorker($workerID);
+                $this->emit('__workerExit', [$workerID, $pid]);
+            }
+        }
     }
 
     /**
