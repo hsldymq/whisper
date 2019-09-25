@@ -131,6 +131,7 @@ abstract class AbstractMaster extends EventEmitter
      * @example $master->run(2);    // 阻塞2秒后返回.
      *
      * @param float|int|null $interval 阻塞时间(秒). 不传代表永久阻塞.
+     *
      * @throws
      */
     protected function process(float $interval = null)
@@ -148,7 +149,6 @@ abstract class AbstractMaster extends EventEmitter
             $this->removeProcessTimer();
             throw $e;
         }
-        
     }
 
     /**
