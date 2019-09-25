@@ -78,6 +78,8 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
      * @param float|int|null $interval 阻塞时间(秒). 不传代表永久阻塞.
      * @example $master->run(0.1);  // 阻塞100毫秒后返回.
      * @example $master->run(2);    // 阻塞2秒后返回.
+     *
+     * @throws
      */
     protected function process(float $interval = null)
     {
@@ -87,7 +89,13 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
                 $this->processTimer = null;
             });
         }
-        $this->eventLoop->run();
+
+        try {
+            $this->eventLoop->run();
+        } catch (\Throwable $e) {
+            $this->removeProcessTimer();
+            throw $e;
+        }
     }
 
     /**
