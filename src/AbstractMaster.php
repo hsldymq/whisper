@@ -377,20 +377,25 @@ abstract class AbstractMaster extends EventEmitter
             $stream->on("close", $onClose);
         } else if ($pid === 0) {
             // child
-            $this->removeAllListeners();
-            $this->removeAllSignalHandlers();
-            $this->removeAllTimers();
-            $this->unregisterAllShutdown();
-            foreach ($this->workers as $each) {
-                $c = $each['communicator'] ?? null;
-                $c && $c->disconnect();
-            }
-            fclose($socketPair[0]);
-            unset($socketPair[0], $this->eventLoop, $this->workers);
-
-            is_callable($afterCreated) && $afterCreated();
-            $worker = $factory->makeWorker($workerID, $socketPair[1]);
             try {
+                // 子进程整个用try catch包起来为了防止中间任何一个环节出错,都不会让子进程执行父进程的逻辑
+                // 假设存在一个Master子类,在其业务逻辑中调用createWorker
+                // 加入子进程在下面任意一个流程发生了错误从而抛出异常,而调用createWorker又捕获了这个异常
+                // 那么子进程就会继续createWorker之后的代码,即父进程的逻辑
+
+                $this->removeAllListeners();
+                $this->removeAllSignalHandlers();
+                $this->removeAllTimers();
+                $this->unregisterAllShutdown();
+                foreach ($this->workers as $each) {
+                    $c = $each['communicator'] ?? null;
+                    $c && $c->disconnect();
+                }
+                fclose($socketPair[0]);
+                unset($socketPair[0], $this->eventLoop, $this->workers);
+
+                is_callable($afterCreated) && $afterCreated();
+                $worker = $factory->makeWorker($workerID, $socketPair[1]);
                 $worker->run();
             } catch (\Throwable $e) {
                 exit(-1);
