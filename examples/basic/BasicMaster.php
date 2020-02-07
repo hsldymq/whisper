@@ -17,13 +17,15 @@ class BasicMaster extends AbstractMaster
             echo "{$workerID} Quit.\n";
 
             if ($this->countWorkers() === 0) {
-                echo "Master Quit\n";
-                $this->stopProcess();
+                $this->quit();
             }
         })->addSignalHandler(SIGINT, function (int $signal, BasicMaster $master) {
             echo "Caught Signal {$signal}, Sending Quit Message To Child.\n";
             foreach ($this->getWorkerIDs() as $id) {
                 $this->sendMessage($id, new Message(10, ''));
+            }
+            if ($this->countWorkers() === 0) {
+                $this->quit();
             }
         })->registerShutdown(function () {
             echo "Shutdown Function Called.\n";
@@ -39,7 +41,7 @@ class BasicMaster extends AbstractMaster
         $workerIDs = [];
 
         for ($i = 0; $i < $this->childNum; $i++) {
-            $workerIDs[] = $this->createWorker($factory);
+             $workerIDs[] = $this->createWorker($factory);
         }
 
         $this->process();
@@ -50,5 +52,11 @@ class BasicMaster extends AbstractMaster
         echo "Receive A Message From Worker, Type:{$msg->getType()}, Content:{$msg->getContent()}\n";
 
         $this->sendMessage($workerID, new Message(0, "This Message Was Sent By Master."));
+    }
+
+    public function quit()
+    {
+        echo "Master Quit\n";
+        $this->stopProcess();
     }
 }
