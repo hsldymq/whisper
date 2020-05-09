@@ -134,6 +134,13 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
         return $this->communicator;
     }
 
+    final protected function errorlessEmit(string $event, array $args = [])
+    {
+        try {
+            $this->emit($event, $args);
+        } finally {}
+    }
+
     /**
      * @param Message $msg
      * @throws
