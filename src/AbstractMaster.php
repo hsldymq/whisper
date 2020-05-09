@@ -24,8 +24,8 @@ use React\Stream\DuplexResourceStream;
  * @event __workerExit,         参数: string $workerID, int $pid
  * @event __sendingMessage      参数: Message $message
  *
- * 要捕捉和发布事件,使用:
- *      $this->on和$this->emit方法
+ * 要捕获事件,使用$this->on方法
+ * 要发布事件,使用$this->emit或$this->errorlessEmit方法
  */
 abstract class AbstractMaster extends EventEmitter
 {
@@ -194,7 +194,7 @@ abstract class AbstractMaster extends EventEmitter
             $workerID = $this->workerIDs[$pid] ?? null;
             if ($workerID !== null) {
                 $this->removeWorker($workerID);
-                $this->emit('__workerExit', [$workerID, $pid]);
+                $this->errorlessEmit('__workerExit', [$workerID, $pid]);
             }
         }
     }
@@ -300,6 +300,13 @@ abstract class AbstractMaster extends EventEmitter
         return Helper::uuid();
     }
 
+    final protected function errorlessEmit(string $event, array $args = [])
+    {
+        try {
+            $this->emit($event, $args);
+        } finally {}
+    }
+
     /**
      * 将消息写入缓冲区.
      * 
@@ -320,7 +327,7 @@ abstract class AbstractMaster extends EventEmitter
             throw new UnwritableSocketException();
         }
 
-        $this->emit('__sendingMessage', [$msg]);
+        $this->errorlessEmit('__sendingMessage', [$msg]);
 
         return $communicator->send($msg);
     }
@@ -363,7 +370,7 @@ abstract class AbstractMaster extends EventEmitter
                     $pid = $this->workers[$workerID]['pid'] ?? null;
                     if ($pid !== null) {
                         $this->removeWorker($workerID);
-                        $this->emit("__workerExit", [$workerID, $pid]);
+                        $this->errorlessEmit("__workerExit", [$workerID, $pid]);
                     }
                 };
             })($workerID);
