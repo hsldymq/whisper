@@ -73,7 +73,7 @@ abstract class AbstractMaster extends EventEmitter
      *      while (true) {
      *          // do something
      *          // etc. $this->sendMessage(new Message(0, "content"));
-     *          $this->process(2);      // block for 2 seconds.
+     *          $this->process(2);      // run in event loop until 2 seconds later
      *      }
      *  }
      */
@@ -118,12 +118,9 @@ abstract class AbstractMaster extends EventEmitter
     }
 
     /**
-     * 开始阻塞处理消息传输和处理,直至指定时间返回.
+     * 阻塞运行在事件循环中处理消息传输和各种事件,直至指定时间返回.
      *
-     * @example $master->run(0.1);  // 阻塞100毫秒后返回.
-     * @example $master->run(2);    // 阻塞2秒后返回.
-     *
-     * @param float|int|null $interval 阻塞时间(秒). 不传代表永久阻塞.
+     * @param float|int|null $interval 事件循环阻塞时间(秒). 不传代表永久阻塞.
      *
      * @throws
      */
