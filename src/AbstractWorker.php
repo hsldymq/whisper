@@ -138,7 +138,7 @@ abstract class AbstractWorker extends EventEmitter implements MessageHandler
     {
         try {
             $this->emit($event, $args);
-        } finally {}
+        } catch (\Throwable $e) {}
     }
 
     /**
