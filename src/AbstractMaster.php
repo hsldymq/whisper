@@ -304,7 +304,7 @@ abstract class AbstractMaster extends EventEmitter
     {
         try {
             $this->emit($event, $args);
-        } finally {}
+        } catch (\Throwable $e) {}
     }
 
     /**
