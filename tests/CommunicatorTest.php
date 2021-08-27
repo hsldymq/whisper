@@ -40,10 +40,11 @@ class CommunicatorTest extends TestCase
 
     /**
      * @depends testParseHeader
-     * @expectedException \Archman\Whisper\Exception\CheckMagicWordException
      */
     public function testParseInvalidHeader()
     {
+        $this->expectException(\Archman\Whisper\Exception\CheckMagicWordException::class);
+
         $msg = new Message(1, 'xxxx');
         $s = Communicator::serialize($msg);
         $s[0] = 'x';
