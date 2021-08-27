@@ -2,11 +2,9 @@
         bootstrap="./vendor/autoload.php"
         stopOnFailure="false"
         colors="true"
+        cacheResult="false"
 >
     <testsuites>
-        <testsuite name="helpers">
-            <file>./tests/HelperTest.php</file>
-        </testsuite>
         <testsuite name="communicator">
             <file>./tests/CommunicatorTest.php</file>
         </testsuite>
