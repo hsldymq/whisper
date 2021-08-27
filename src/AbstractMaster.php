@@ -76,6 +76,8 @@ abstract class AbstractMaster extends EventEmitter
      *          $this->process(2);      // run in event loop until 2 seconds later
      *      }
      *  }
+     *
+     * @return mixed
      */
     abstract public function run();
 
@@ -336,7 +338,7 @@ abstract class AbstractMaster extends EventEmitter
      * Fork a new worker.
      *
      * @param WorkerFactoryInterface $factory
-     * @param callable $afterCreated 当worker被创建,被执行于worker进程中,你可以用它清理从父进程fork过来的无用数据或者做其他操作.
+     * @param callable|null $afterCreated 当worker被创建,被执行于worker进程中,你可以用它清理从父进程fork过来的无用数据或者做其他操作.
      * 
      * @return string|null
      * @throws

@@ -2,14 +2,14 @@
     "name": "hsldymq/whisper",
     "license": "MIT",
     "require": {
-        "php": ">=7.0.0",
-        "hsldymq/byte-order-op": "~0.1.0",
-        "react/event-loop": "~1.0",
-        "react/stream": "~1.0",
-        "evenement/evenement": "~3.0.0"
+        "php": "^7.0 || ^8.0",
+        "hsldymq/byte-order-op": "^0.1",
+        "react/event-loop": "^1.2",
+        "react/stream": "^1.2",
+        "evenement/evenement": "^3.0.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "~6.4"
+        "phpunit/phpunit": "^6.5 || ^7.5 || ^9.5"
     },
     "autoload": {
         "psr-4": {
