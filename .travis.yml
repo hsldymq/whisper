@@ -1,0 +1,17 @@
+language: php
+
+php:
+  - '7.1'
+  - '7.2'
+  - '7.3'
+  - '7.4'
+  - '8.0'
+
+jobs:
+  include:
+    - php: '7.0'
+      script: php ./vendor/bin/phpunit --coverage-clover coverage.xml
+
+install: composer install
+
+script: XDEBUG_MODE=coverage php ./vendor/bin/phpunit --coverage-clover coverage.xml
