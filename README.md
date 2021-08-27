@@ -1,1 +1,2 @@
-<h1 align="center">Whisper</h1>
+# Whisper
+[![Build Status](https://app.travis-ci.com/hsldymq/whisper.svg?branch=master)](https://app.travis-ci.com/hsldymq/whisper)
