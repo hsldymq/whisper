@@ -41,7 +41,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
       - name: Install dependencies
-        run: composer install --ignore-platform-reqs
+        run: composer install
 
       - name: Run Unit Tests
         run: composer run-script test -- --coverage-clover coverage.xml
