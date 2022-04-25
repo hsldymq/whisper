@@ -1,2 +1,2 @@
 # Whisper
-[![Build Status](https://app.travis-ci.com/hsldymq/whisper.svg?branch=master)](https://app.travis-ci.com/hsldymq/whisper)
+![tests](https://github.com/hsldymq/whisper/actions/workflows/unit-tests.yml/badge.svg)
