@@ -1,5 +1,6 @@
 {
     "name": "hsldymq/whisper",
+    "description": "父子进程通讯;子进程管理;信号处理;定时器通用框架",
     "homepage": "https://github.com/hsldymq/whisper",
     "license": "MIT",
     "require": {
